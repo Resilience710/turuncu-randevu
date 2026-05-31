@@ -33,7 +33,7 @@ from app.security.phones import (
     normalize_phone,
 )
 from app.services.slots import make_slots
-from app.sms.netgsm import send_sms
+from app.sms.vatansms import send_sms
 
 router = APIRouter(tags=["appointments"])
 

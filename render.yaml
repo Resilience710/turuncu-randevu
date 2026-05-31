@@ -28,10 +28,14 @@ services:
         value: INFO
       - key: STATIC_DIR
         value: /app/static
-      # --- Netgsm (şimdilik boş; OTP ekrana düşer) ---
-      - key: NETGSM_USERCODE
+      # --- VatanSMS (şimdilik boş; OTP ekrana düşer) ---
+      - key: VATANSMS_API_ID
         sync: false
-      - key: NETGSM_PASSWORD
+      - key: VATANSMS_API_KEY
         sync: false
-      - key: NETGSM_MSGHEADER
+      - key: VATANSMS_SENDER
         sync: false
+      - key: VATANSMS_MESSAGE_TYPE
+        value: normal
+      - key: VATANSMS_BASE_URL
+        value: https://api.vatansms.net/api/v1

@@ -32,11 +32,13 @@ class Settings(BaseSettings):
     otp_secret: str = Field(default="", description="OTP hash secret'ı")
     otp_ttl_seconds: int = Field(default=300, ge=60, le=3600)
 
-    # Netgsm
-    netgsm_usercode: str = ""
-    netgsm_password: str = ""
-    netgsm_msgheader: str = ""
-    netgsm_api_url: str = "https://api.netgsm.com.tr/sms/send/get/"
+    # VatanSMS (REST API v1) — https://api.vatansms.net/api/v1/1toN
+    vatansms_api_id: str = ""
+    vatansms_api_key: str = ""
+    vatansms_sender: str = ""  # bireysel: 0850'li abone numarası, kurumsal: onaylı başlık
+    vatansms_base_url: str = "https://api.vatansms.net/api/v1"
+    vatansms_message_type: str = "normal"  # "normal" (ASCII'ye çevirir, 1 SMS) | "turkce"
+    vatansms_content_type: str = "bilgi"   # işlemsel/bilgilendirme (İYS dışı)
 
     # CORS
     cors_origins: str = "http://localhost:5173,http://localhost:3000"

@@ -19,7 +19,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import AsyncSessionLocal
 from app.models.sms_reminder import SmsReminder
 from app.security.phones import decrypt_phone
-from app.sms.netgsm import send_sms
+from app.sms.vatansms import send_sms
 
 logger = logging.getLogger(__name__)
 

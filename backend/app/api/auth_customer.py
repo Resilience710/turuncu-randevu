@@ -29,7 +29,7 @@ from app.security.phones import (
     phone_hash,
 )
 from app.security.tokens import new_session_token
-from app.sms.netgsm import send_sms
+from app.sms.vatansms import send_sms
 
 router = APIRouter(prefix="/auth/customer", tags=["auth"])
 
