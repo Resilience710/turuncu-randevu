@@ -1,0 +1,15 @@
+legacy/
+**/venv/
+**/.venv/
+**/__pycache__/
+**/*.pyc
+**/node_modules/
+.git/
+.claude/
+test_reports/
+tests/
+memory/
+**/.env
+**/.env.*
+*.md
+.emergent/

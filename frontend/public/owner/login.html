@@ -1,0 +1,9 @@
+<!doctype html>
+<html lang="tr"><head><meta charset="UTF-8" />
+<title>Yönlendiriliyor…</title>
+<script>
+  var q = new URLSearchParams(location.search);
+  var next = q.get('next');
+  location.replace('/index.html?role=owner' + (next ? '&next=' + encodeURIComponent(next) : ''));
+</script>
+</head><body></body></html>

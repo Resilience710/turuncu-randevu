@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#F97316" />
+  <title>Keşfet — Turuncu Randevu</title>
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="icon" type="image/svg+xml" href="/icons/pwa-icon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script>(function(){var t=localStorage.getItem('turuncu-theme')||((window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light');document.documentElement.classList.toggle('dark',t==='dark');})();</script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="/js/shared/tailwind-config.js"></script>
+  <link rel="stylesheet" href="/css/theme.css" />
+</head>
+<body>
+  <main class="consumer-main">
+    <div class="consumer-page">
+      <h1 style="font-size:26px;font-weight:700;margin-bottom:4px;">Keşfet</h1>
+      <p class="muted" style="font-size:14px;margin-bottom:18px;">İşletme ara, hizmet seç, uygun saate randevu al.</p>
+
+      <div class="card card-pad" style="display:flex;flex-direction:column;gap:12px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <input class="input" id="search" placeholder="İşletme veya hizmet" data-testid="search-input" />
+          <input class="input" id="location" placeholder="Şehir veya semt" data-testid="location-input" />
+        </div>
+        <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;" id="sector-chips" data-testid="sector-chips"></div>
+      </div>
+
+      <div id="list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-top:18px;" data-testid="business-list">
+        <div class="skeleton" style="height:120px;border-radius:12px;"></div>
+        <div class="skeleton" style="height:120px;border-radius:12px;"></div>
+        <div class="skeleton" style="height:120px;border-radius:12px;"></div>
+      </div>
+    </div>
+  </main>
+
+  <script src="/js/shared/theme.js"></script>
+  <script src="/js/shared/api.js"></script>
+  <script src="/js/shared/auth.js"></script>
+  <script src="/js/shared/toast.js"></script>
+  <script src="/js/shared/topnav.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
+    const session = window.Auth.requireRole(['customer']);
+    if (session) {
+      window.TopNav.mount('home');
+      let activeSector = 'all';
+      const sectorEl = document.getElementById('sector-chips');
+      const listEl = document.getElementById('list');
+      const chipEls = [];
+
+      function paintSectors() { chipEls.forEach(c => c.classList.toggle('active', c.dataset.sid === activeSector)); }
+
+      async function loadSectors() {
+        try {
+          const d = await window.API.get('/sectors');   // bir kez çekilir
+          const all = [{id:'all',label:'Tümü'}, ...d.sectors];
+          sectorEl.innerHTML = ''; chipEls.length = 0;
+          all.forEach(s => {
+            const c = document.createElement('button');
+            c.className = 'chip' + (s.id===activeSector?' active':'');
+            c.textContent = s.label;
+            c.dataset.sid = s.id;
+            c.setAttribute('data-testid', `sector-chip-${s.id}`);
+            c.addEventListener('click', () => { activeSector = s.id; paintSectors(); refresh(); });  // anında
+            sectorEl.appendChild(c); chipEls.push(c);
+          });
+        } catch(e){}
+      }
+
+      async function refresh() {
+        const params = new URLSearchParams();
+        const search=document.getElementById('search').value.trim(), location=document.getElementById('location').value.trim();
+        if (search) params.set('search', search);
+        if (location) params.set('location', location);
+        if (activeSector && activeSector!=='all') params.set('sector', activeSector);
+        try {
+          const data = await window.API.get(`/businesses?${params}`);
+          listEl.style.display = (data.businesses?.length ? 'grid' : 'block');
+          if (!data.businesses?.length) {
+            listEl.innerHTML = '<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><h3>Sonuç bulunamadı</h3><p>Filtreleri değiştirip tekrar dene.</p></div>';
+            return;
+          }
+          listEl.innerHTML = '';
+          data.businesses.forEach(b => {
+            const a = document.createElement('a');
+            a.href = `/customer/business-detail.html?id=${b.id}`;
+            a.className = 'card card-hover card-pad';
+            a.style.cssText = 'text-decoration:none;color:inherit;display:flex;flex-direction:column;gap:8px;';
+            a.setAttribute('data-testid', `business-card-${b.id}`);
+            a.innerHTML = `
+              <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
+                <strong style="font-size:16px;">${b.name}</strong>
+                <span class="badge badge-brand">${b.sector_label||b.sector}</span>
+              </div>
+              <div class="muted" style="font-size:13px;">${b.address||''}${b.location?' · '+b.location:''}</div>
+              <div class="muted" style="font-size:12px;display:flex;align-items:center;gap:5px;">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                ${b.employee_count||0} çalışan
+              </div>`;
+            listEl.appendChild(a);
+          });
+        } catch(e){ window.Toast.error(e.message); }
+      }
+
+      let t;
+      ['search','location'].forEach(id => document.getElementById(id).addEventListener('input', () => { clearTimeout(t); t=setTimeout(refresh,300); }));
+      loadSectors().then(refresh);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#F97316" />
+  <title>Manuel Randevu — Turuncu Randevu</title>
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="icon" type="image/svg+xml" href="/icons/pwa-icon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script>(function(){var t=localStorage.getItem('turuncu-theme')||((window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light');document.documentElement.classList.toggle('dark',t==='dark');})();</script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="/js/shared/tailwind-config.js"></script>
+  <link rel="stylesheet" href="/css/theme.css" />
+</head>
+<body>
+  <main class="shell-main">
+    <div class="shell-page" style="max-width:640px;">
+      <p class="muted" style="font-size:14px;margin-bottom:18px;">Telefonla gelen müşteriler için randevu oluştur.</p>
+      <div class="card card-pad">
+        <form id="form" novalidate>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+            <div class="field" style="margin:0;"><label class="field-label" for="staff_id">Çalışan</label><select class="input select" id="staff_id" required data-testid="select-staff"><option>Yükleniyor…</option></select></div>
+            <div class="field" style="margin:0;"><label class="field-label" for="station_id">İstasyon</label><select class="input select" id="station_id" data-testid="select-station"><option value="">—</option></select></div>
+          </div>
+          <div class="field"><label class="field-label" for="service_id">Hizmet</label><select class="input select" id="service_id" required data-testid="select-service"><option>Yükleniyor…</option></select></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px;">
+            <div class="field" style="margin:0;position:relative;"><label class="field-label" for="date">Tarih</label><input class="input" id="date" type="text" required placeholder="Tarih seç" data-testid="input-date" /></div>
+            <div class="field" style="margin:0;"><label class="field-label" for="time">Saat</label><select class="input select" id="time" required data-testid="select-time"></select></div>
+          </div>
+          <div class="field"><label class="field-label" for="customer_name">Müşteri adı</label><input class="input" id="customer_name" placeholder="Telefon müşterisi" data-testid="input-customer-name" /></div>
+          <div class="field"><label class="field-label" for="customer_phone">Müşteri telefonu <span class="muted" style="font-weight:400;">(opsiyonel — SMS için)</span></label><input class="input" id="customer_phone" type="tel" inputmode="tel" placeholder="0532..." data-testid="input-customer-phone" /></div>
+          <div id="form-error" class="field-error" role="alert" aria-live="polite" style="display:none;margin-top:12px;"></div>
+          <button type="submit" class="btn btn-brand btn-block btn-lg" style="margin-top:18px;" id="submit-btn" disabled data-testid="submit-manual">Randevu oluştur</button>
+        </form>
+      </div>
+    </div>
+  </main>
+
+  <script src="/js/shared/theme.js"></script>
+  <script src="/js/shared/api.js"></script>
+  <script src="/js/shared/auth.js"></script>
+  <script src="/js/shared/toast.js"></script>
+  <script src="/js/shared/datepicker.js"></script>
+  <script src="/js/shared/shell.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
+    const session = window.Auth.requireRole(['owner']);
+    if (session) {
+      window.Shell.mount({ active: 'manual', title: 'Manuel Randevu' });
+      const bizId = session.business?.id;
+      const errEl = document.getElementById('form-error');
+      const showErr=(m)=>{errEl.textContent=m;errEl.style.display='block';};
+      const staffSel=document.getElementById('staff_id'), stationSel=document.getElementById('station_id'),
+            svcSel=document.getElementById('service_id'), timeSel=document.getElementById('time');
+      let staffMap = {};   // id -> {station_ids, station}
+
+      // Saat slotları (hemen doldur — API beklemeden)
+      for (let i=0;i<18;i++){ const h=9+Math.floor(i/2), m=(i%2)*30; const t=`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`; const o=document.createElement('option'); o.value=t; o.textContent=t; timeSel.appendChild(o); }
+
+      // Tarih seçici (geçmiş kapalı, varsayılan bugün)
+      const today = new Date(); const dp = window.Datepicker.attach(document.getElementById('date'), { value: today.toISOString().slice(0,10) });
+
+      function setStationForStaff(staffId) {
+        const st = staffMap[staffId];
+        if (st && st.station_ids && st.station_ids.length) stationSel.value = st.station_ids[0];
+        else stationSel.value = '';
+      }
+
+      async function init() {
+        try {
+          const data = await window.API.get(`/businesses/${bizId}`);
+          const b = data.business;
+          // İstasyonlar
+          stationSel.innerHTML = '<option value="">— (otomatik)</option>';
+          (b.stations || []).forEach(s => { const o=document.createElement('option'); o.value=s.id; o.textContent=s.label; stationSel.appendChild(o); });
+          // Çalışanlar
+          staffSel.innerHTML = '';
+          (b.employees||[]).forEach(e => {
+            staffMap[e.id] = { station_ids: e.station_ids || [], station: e.station };
+            const o=document.createElement('option'); o.value=e.id; o.textContent=`${e.name}${e.station?' · '+e.station:''}`; staffSel.appendChild(o);
+          });
+          // Hizmetler
+          svcSel.innerHTML = '';
+          if (!(b.services||[]).length) { svcSel.innerHTML='<option value="">Hizmet yok — İşletme ayarlarından ekle</option>'; }
+          (b.services||[]).forEach(s => { const o=document.createElement('option'); o.value=s.id; o.textContent=s.name; svcSel.appendChild(o); });
+          setStationForStaff(staffSel.value);
+          document.getElementById('submit-btn').disabled = false;
+        } catch(e){ window.Toast.error(e.message); staffSel.innerHTML='<option>Yüklenemedi</option>'; }
+      }
+      init();
+
+      staffSel.addEventListener('change', () => setStationForStaff(staffSel.value));
+
+      document.getElementById('form').addEventListener('submit', async (e) => {
+        e.preventDefault(); errEl.style.display='none';
+        const dateVal = dp.getValue();
+        if (!dateVal) { showErr('Tarih seç.'); return; }
+        const b=document.getElementById('submit-btn'); const o=b.textContent; b.disabled=true; b.innerHTML='<span class="spinner spinner-light"></span>';
+        try {
+          await window.API.post('/appointments', {
+            business_id: bizId,
+            staff_id: staffSel.value,
+            station_id: stationSel.value || null,
+            service_id: svcSel.value || null,
+            service_name: svcSel.options[svcSel.selectedIndex]?.textContent || 'Hizmet',
+            date: dateVal,
+            time: timeSel.value,
+            customer_name: document.getElementById('customer_name').value || 'Telefon müşterisi',
+            customer_phone: document.getElementById('customer_phone').value || null,
+            source: 'manual',
+          });
+          window.Toast.success(`Randevu oluşturuldu: ${dateVal} ${timeSel.value}`);
+          document.getElementById('customer_name').value=''; document.getElementById('customer_phone').value='';
+        } catch(err){ showErr(err.message||'Randevu oluşturulamadı.'); }
+        finally { b.disabled=false; b.textContent=o; }
+      });
+    }
+  </script>
+</body>
+</html>

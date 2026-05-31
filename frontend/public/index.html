@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#F97316" />
+  <title>Giriş — Turuncu Randevu</title>
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="icon" type="image/svg+xml" href="/icons/pwa-icon.svg" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <script>(function(){var t=localStorage.getItem('turuncu-theme')||((window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light');document.documentElement.classList.toggle('dark',t==='dark');})();</script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="/js/shared/tailwind-config.js"></script>
+  <link rel="stylesheet" href="/css/theme.css" />
+  <style>
+    .auth-wrap { min-height: 100vh; display: grid; grid-template-columns: 1fr; }
+    @media (min-width: 1024px) { .auth-wrap { grid-template-columns: 1.05fr 1fr; } }
+    .auth-aside { display: none; position: relative; overflow: hidden; background: var(--sidebar); color: #fff; padding: 56px; flex-direction: column; justify-content: space-between; }
+    @media (min-width: 1024px) { .auth-aside { display: flex; } }
+    .auth-aside::before { content:''; position:absolute; width:420px; height:420px; border-radius:50%; background:radial-gradient(circle,rgba(249,115,22,.45),transparent 70%); top:-120px; right:-120px; }
+    .auth-aside::after { content:''; position:absolute; width:320px; height:320px; border-radius:50%; background:radial-gradient(circle,rgba(59,130,246,.28),transparent 70%); bottom:-100px; left:-80px; }
+    .auth-form-col { display: flex; flex-direction: column; justify-content: center; padding: 40px 22px; }
+    @media (min-width: 1024px) { .auth-form-col { padding: 56px; } }
+    .auth-card { width: 100%; max-width: 400px; margin: 0 auto; }
+    .role-tabs { display: flex; gap: 4px; background: var(--surface-2); padding: 4px; border-radius: 11px; margin-bottom: 24px; }
+    .role-tab { flex: 1; padding: 9px; border-radius: 8px; border: none; background: transparent; color: var(--muted); font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer; transition: all .15s; }
+    .role-tab.active { background: var(--surface); color: var(--brand-strong); box-shadow: var(--shadow-sm); }
+    html.dark .role-tab.active { color: var(--brand); }
+  </style>
+</head>
+<body>
+<div class="auth-wrap">
+
+  <!-- Marka paneli -->
+  <aside class="auth-aside">
+    <div style="position:relative;z-index:1;display:flex;align-items:center;gap:11px;">
+      <span style="width:40px;height:40px;border-radius:11px;background:var(--brand);display:flex;align-items:center;justify-content:center;">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+      </span>
+      <strong style="font-size:18px;">Turuncu Randevu</strong>
+    </div>
+
+    <div style="position:relative;z-index:1;max-width:420px;">
+      <h1 style="font-size:38px;line-height:1.1;font-weight:700;">Dükkânın,<br>tek ekranda.</h1>
+      <p style="margin-top:16px;color:#CBD5E1;font-size:16px;line-height:1.6;">
+        Randevular, istasyon doluluğu, personel ve müşteriler. Hepsi tek panelde.
+        Müşterilerine otomatik SMS gider, tezgâhındaki tabletten sırayı yönetirsin.
+      </p>
+      <div style="margin-top:28px;display:flex;flex-direction:column;gap:12px;">
+        <div style="display:flex;align-items:center;gap:10px;color:#E2E8F0;font-size:14px;">
+          <span style="width:26px;height:26px;border-radius:7px;background:rgba(34,197,94,.18);color:#4ADE80;display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></span>
+          KVKK uyumlu, AES-256 ile şifreli telefon saklama
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;color:#E2E8F0;font-size:14px;">
+          <span style="width:26px;height:26px;border-radius:7px;background:rgba(34,197,94,.18);color:#4ADE80;display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></span>
+          Randevudan 15 dakika önce otomatik hatırlatma
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;color:#E2E8F0;font-size:14px;">
+          <span style="width:26px;height:26px;border-radius:7px;background:rgba(34,197,94,.18);color:#4ADE80;display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></span>
+          7" tablette tam ekran tezgâh modu
+        </div>
+      </div>
+    </div>
+
+    <div style="position:relative;z-index:1;color:#64748B;font-size:13px;">© 2026 Turuncu Randevu</div>
+  </aside>
+
+  <!-- Form -->
+  <main class="auth-form-col">
+    <div class="auth-card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+        <span class="badge badge-brand" data-testid="login-badge">Hoş geldin</span>
+        <button class="icon-btn" id="theme-btn" aria-label="Tema" title="Tema" style="width:36px;height:36px;border-radius:9px;border:none;background:var(--surface-2);color:var(--muted);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;"></button>
+      </div>
+      <h2 style="font-size:24px;font-weight:700;margin-bottom:4px;">Giriş yap</h2>
+      <p class="muted" style="font-size:14px;margin-bottom:22px;" id="role-hint">Hesap türünü seç ve devam et.</p>
+
+      <div class="role-tabs" role="tablist">
+        <button class="role-tab active" data-role="customer" data-testid="role-tab-customer">Müşteri</button>
+        <button class="role-tab" data-role="owner" data-testid="role-tab-owner">İşletme</button>
+        <button class="role-tab" data-role="staff" data-testid="role-tab-staff">Personel</button>
+      </div>
+
+      <form id="login-form" novalidate>
+        <!-- Müşteri alanları -->
+        <div data-fields="customer">
+          <div class="field">
+            <label class="field-label" for="c-phone">Telefon</label>
+            <input class="input" id="c-phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="0532 123 45 67" data-testid="input-phone" />
+          </div>
+          <div class="field">
+            <label class="field-label" for="c-gmail">Gmail</label>
+            <input class="input" id="c-gmail" type="email" autocomplete="email" placeholder="ornek@gmail.com" data-testid="input-gmail" />
+          </div>
+        </div>
+
+        <!-- İşletme alanları -->
+        <div data-fields="owner" style="display:none;">
+          <div class="field">
+            <label class="field-label" for="o-identifier">Gmail veya telefon</label>
+            <input class="input" id="o-identifier" type="text" autocomplete="username" placeholder="testpatron@gmail.com" data-testid="input-identifier" />
+          </div>
+        </div>
+
+        <!-- Personel alanları -->
+        <div data-fields="staff" style="display:none;">
+          <div class="field">
+            <label class="field-label" for="s-email">E-posta</label>
+            <input class="input" id="s-email" type="email" autocomplete="email" placeholder="ornek@gmail.com" data-testid="input-staff-email" />
+            <span class="field-hint">Kayıt olurken kullandığın e-posta.</span>
+          </div>
+        </div>
+
+        <!-- Ortak şifre -->
+        <div class="field" style="margin-top:16px;">
+          <label class="field-label" for="password">Şifre</label>
+          <input class="input" id="password" type="password" autocomplete="current-password" minlength="4" placeholder="••••••" data-testid="input-password" />
+        </div>
+
+        <div id="form-error" class="field-error" role="alert" aria-live="polite" style="display:none;margin-top:12px;"></div>
+
+        <button type="submit" class="btn btn-brand btn-block btn-lg" style="margin-top:20px;" data-testid="submit-login">
+          Giriş yap
+        </button>
+      </form>
+
+      <p class="muted" style="text-align:center;font-size:14px;margin-top:20px;" id="register-row">
+        Hesabın yok mu?
+        <a id="register-link" href="/customer/register.html" style="color:var(--brand-strong);font-weight:600;text-decoration:none;" data-testid="register-link">Müşteri kaydı oluştur</a>
+      </p>
+    </div>
+  </main>
+</div>
+
+<script src="/js/shared/theme.js"></script>
+<script src="/js/shared/api.js"></script>
+<script src="/js/shared/auth.js"></script>
+<script src="/js/shared/toast.js"></script>
+<script>
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
+
+  // Oturum varsa direkt yönlendir
+  const existing = window.API.getSession();
+  if (existing?.user) location.href = window.Auth.roleHome(existing.user.role);
+
+  // Tema butonu
+  const themeBtn = document.getElementById('theme-btn');
+  const paintTheme = () => themeBtn.innerHTML = window.Theme.isDark() ? window.Theme.iconSun : window.Theme.iconMoon;
+  paintTheme();
+  themeBtn.addEventListener('click', () => { window.Theme.toggle(); paintTheme(); });
+
+  let role = 'customer';
+  const hints = {
+    customer: 'Telefon, Gmail ve şifrenle gir.',
+    owner: 'İşletme sahibi girişi.',
+    staff: 'E-posta ve şifrenle gir.',
+  };
+  const regLinks = {
+    customer: { href: '/customer/register.html', text: 'Müşteri kaydı oluştur', show: true },
+    owner: { href: '/owner/register.html', text: 'İşletme aç', show: true },
+    staff: { href: '/staff/register.html', text: 'Davet koduyla personel kaydı', show: true },
+  };
+
+  const tabs = document.querySelectorAll('.role-tab');
+  const fieldGroups = document.querySelectorAll('[data-fields]');
+  const errEl = document.getElementById('form-error');
+
+  function selectRole(r) {
+    role = r;
+    tabs.forEach(t => t.classList.toggle('active', t.dataset.role === r));
+    fieldGroups.forEach(g => g.style.display = g.dataset.fields === r ? 'block' : 'none');
+    document.getElementById('role-hint').textContent = hints[r];
+    const rl = regLinks[r];
+    const row = document.getElementById('register-row');
+    const link = document.getElementById('register-link');
+    if (rl.show) { row.style.display = 'block'; link.href = rl.href; link.textContent = rl.text; }
+    else { row.style.display = 'none'; }
+    errEl.style.display = 'none';
+  }
+  tabs.forEach(t => t.addEventListener('click', () => selectRole(t.dataset.role)));
+
+  // URL ?role= ile başlangıç
+  const qsRole = new URLSearchParams(location.search).get('role');
+  if (qsRole && hints[qsRole]) selectRole(qsRole);
+
+  const showErr = (m) => { errEl.textContent = m; errEl.style.display = 'block'; };
+
+  document.getElementById('login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    errEl.style.display = 'none';
+    const btn = e.target.querySelector('button[type=submit]');
+    const orig = btn.textContent;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner spinner-light"></span>';
+    const password = document.getElementById('password').value;
+    try {
+      let res, home;
+      if (role === 'customer') {
+        res = await window.API.post('/auth/customer/login', {
+          phone: document.getElementById('c-phone').value.trim(),
+          gmail: document.getElementById('c-gmail').value.trim(),
+          password,
+        });
+        home = '/customer/businesses.html';
+      } else if (role === 'owner') {
+        res = await window.API.post('/auth/owner/login', {
+          identifier: document.getElementById('o-identifier').value.trim(),
+          password,
+        });
+        home = '/owner/dashboard.html';
+      } else {
+        res = await window.API.post('/auth/staff/login', {
+          email: document.getElementById('s-email').value.trim(),
+          password,
+        });
+        home = '/owner/dashboard.html';
+      }
+      window.API.setSession(res);
+      const next = new URLSearchParams(location.search).get('next');
+      location.href = next ? decodeURIComponent(next) : home;
+    } catch (err) {
+      showErr(err.message || 'Giriş bilgileri hatalı.');
+      btn.disabled = false;
+      btn.textContent = orig;
+    }
+  });
+
+</script>
+</body>
+</html>

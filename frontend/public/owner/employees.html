@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#F97316" />
+  <title>Çalışanlar — Turuncu Randevu</title>
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="icon" type="image/svg+xml" href="/icons/pwa-icon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script>(function(){var t=localStorage.getItem('turuncu-theme')||((window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light');document.documentElement.classList.toggle('dark',t==='dark');})();</script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="/js/shared/tailwind-config.js"></script>
+  <link rel="stylesheet" href="/css/theme.css" />
+  <style>
+    .st-check { display:inline-flex; align-items:center; gap:7px; padding:7px 12px; border-radius:999px; border:1px solid var(--border);
+      background:var(--surface); font-size:13px; font-weight:500; cursor:pointer; user-select:none; }
+    .st-check input { accent-color:var(--brand); width:15px; height:15px; }
+    .st-check.on { border-color:var(--brand); background:var(--brand-subtle); color:var(--brand-strong); }
+  </style>
+</head>
+<body>
+  <main class="shell-main">
+    <div class="shell-page" style="max-width:820px;">
+      <div class="card card-pad" style="display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;background:var(--brand-subtle);border-color:transparent;">
+        <div>
+          <div class="kpi-label" style="color:var(--brand-strong);">Davet kodu</div>
+          <div style="font-size:28px;font-weight:700;letter-spacing:6px;color:var(--brand-strong);" id="invite_code" data-testid="invite-code">—</div>
+        </div>
+        <p class="muted" style="font-size:13px;max-width:260px;">Yeni personel bu kod + kendi şifresiyle giriş yapar.</p>
+      </div>
+
+      <div class="card card-pad" style="margin-top:16px;">
+        <h2 style="font-size:16px;font-weight:600;margin-bottom:14px;">Yeni personel ekle</h2>
+        <form id="add-form" novalidate>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div class="field" style="margin:0;"><label class="field-label" for="first_name">Ad</label><input class="input" id="first_name" required data-testid="input-first-name" /></div>
+            <div class="field" style="margin:0;"><label class="field-label" for="last_name">Soyad</label><input class="input" id="last_name" required data-testid="input-last-name" /></div>
+          </div>
+          <div class="field"><label class="field-label" for="title">Unvan</label><input class="input" id="title" placeholder="Usta" data-testid="input-title" /></div>
+
+          <div class="field">
+            <label class="field-label">İstasyonlar <span class="muted" style="font-weight:400;">(birden fazla seçebilirsin)</span></label>
+            <div id="station-checks" style="display:flex;flex-wrap:wrap;gap:8px;" data-testid="station-checks"></div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;">
+            <div class="field" style="margin:0;"><label class="field-label" for="email">E-posta</label><input class="input" id="email" type="email" required data-testid="input-email" /></div>
+            <div class="field" style="margin:0;"><label class="field-label" for="phone">Telefon <span class="muted" style="font-weight:400;">(ops.)</span></label><input class="input" id="phone" type="tel" inputmode="tel" data-testid="input-phone" /></div>
+          </div>
+          <p class="field-hint" style="margin-top:6px;">Personel bu e-posta + şifresiyle giriş yapacak.</p>
+          <div class="field"><label class="field-label" for="password">Şifre</label><input class="input" id="password" type="password" required minlength="8" placeholder="En az 8 karakter" data-testid="input-password" /><span class="field-hint">En az 8 karakter, bir harf ve bir rakam.</span></div>
+          <button type="submit" class="btn btn-brand" style="margin-top:14px;" data-testid="submit-add-employee">Ekle</button>
+        </form>
+      </div>
+
+      <div class="card" style="margin-top:16px;overflow:hidden;">
+        <div style="padding:16px 18px;border-bottom:1px solid var(--border);"><h2 style="font-size:16px;font-weight:600;">Personel listesi</h2></div>
+        <div id="list" data-testid="employees-list"><div style="padding:16px;"><div class="skeleton" style="height:56px;"></div></div></div>
+      </div>
+    </div>
+  </main>
+
+  <script src="/js/shared/theme.js"></script>
+  <script src="/js/shared/api.js"></script>
+  <script src="/js/shared/auth.js"></script>
+  <script src="/js/shared/toast.js"></script>
+  <script src="/js/shared/shell.js"></script>
+  <script src="/js/shared/confirm-modal.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
+    const session = window.Auth.requireRole(['owner']);
+    if (session) {
+      window.Shell.mount({ active: 'staff', title: 'Çalışanlar' });
+      const bizId = session.business?.id;
+      document.getElementById('invite_code').textContent = session.business?.invite_code || '—';
+      let stations = [];   // {id,label}
+      const stationLabel = (id) => (stations.find(s=>s.id===id)||{}).label || '';
+
+      function renderStationChecks() {
+        const el = document.getElementById('station-checks');
+        if (!stations.length) { el.innerHTML = '<span class="muted" style="font-size:13px;">Önce <a href="/owner/business-settings.html" style="color:var(--brand-strong);font-weight:600;">İşletme ayarlarından</a> istasyon ekle.</span>'; return; }
+        el.innerHTML = '';
+        stations.forEach(s => {
+          const lab = document.createElement('label');
+          lab.className = 'st-check';
+          lab.innerHTML = `<input type="checkbox" value="${s.id}" />${s.label}`;
+          const cb = lab.querySelector('input');
+          cb.addEventListener('change', () => lab.classList.toggle('on', cb.checked));
+          el.appendChild(lab);
+        });
+      }
+
+      async function refresh() {
+        const data = await window.API.get(`/businesses/${bizId}`);
+        stations = data.business.stations || [];
+        renderStationChecks();
+        const list = document.getElementById('list');
+        const employees = (data.business.employees||[]).filter(e => e.role === 'staff');
+        if (!employees.length) { list.innerHTML = '<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><h3>Henüz personel yok</h3><p>Yukarıdaki formdan ilk çalışanını ekle.</p></div>'; return; }
+        list.innerHTML = '';
+        employees.forEach(e => {
+          const stLabels = (e.station_ids||[]).map(stationLabel).filter(Boolean).join(', ') || e.station || '—';
+          const row = document.createElement('div');
+          row.setAttribute('data-testid', `employee-card-${e.id}`);
+          row.style.cssText = 'display:flex;align-items:center;gap:12px;padding:13px 18px;border-bottom:1px solid var(--border);';
+          row.innerHTML = `
+            <div class="sb-avatar" style="background:var(--surface-2);color:var(--text);">${(e.name||'?').charAt(0).toUpperCase()}</div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-weight:600;font-size:14px;">${e.name}</div>
+              <div class="muted" style="font-size:13px;">${e.title||''} · ${stLabels}${e.phone_masked?' · '+e.phone_masked:''}</div>
+            </div>
+            <button class="btn btn-danger btn-sm" data-id="${e.id}" data-testid="delete-${e.id}">Sil</button>`;
+          row.querySelector('button').addEventListener('click', async () => {
+            if(!(await window.confirmModal({title:'Personeli sil',message:`${e.name} silinecek.`,confirmText:'Sil',danger:true}))) return;
+            try { await window.API.delete(`/employees/${e.id}`); window.Toast.success('Silindi'); refresh(); }
+            catch(err){ window.Toast.error(err.message); }
+          });
+          list.appendChild(row);
+        });
+      }
+      refresh();
+
+      document.getElementById('add-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const pwErr=window.validatePassword(document.getElementById('password').value);
+        if(pwErr){window.Toast.error(pwErr);return;}
+        const stationIds = [...document.querySelectorAll('#station-checks input:checked')].map(c=>c.value);
+        const b=e.target.querySelector('button[type=submit]'); const o=b.textContent; b.disabled=true; b.innerHTML='<span class="spinner spinner-light"></span>';
+        try {
+          await window.API.post('/employees', {
+            first_name: document.getElementById('first_name').value.trim(),
+            last_name: document.getElementById('last_name').value.trim(),
+            phone: document.getElementById('phone').value.trim()||null,
+            email: document.getElementById('email').value.trim()||null,
+            title: document.getElementById('title').value.trim()||'Çalışan',
+            station_ids: stationIds,
+            password: document.getElementById('password').value,
+          });
+          window.Toast.success('Eklendi'); e.target.reset();
+          document.querySelectorAll('#station-checks .st-check').forEach(l=>l.classList.remove('on'));
+          refresh();
+        } catch(err){ window.Toast.error(err.message); }
+        finally { b.disabled=false; b.textContent=o; }
+      });
+    }
+  </script>
+</body>
+</html>

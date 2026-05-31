@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#F97316" />
+  <title>İşletme — Turuncu Randevu</title>
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="icon" type="image/svg+xml" href="/icons/pwa-icon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script>(function(){var t=localStorage.getItem('turuncu-theme')||((window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light');document.documentElement.classList.toggle('dark',t==='dark');})();</script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="/js/shared/tailwind-config.js"></script>
+  <link rel="stylesheet" href="/css/theme.css" />
+</head>
+<body>
+  <main class="shell-main">
+    <div class="shell-page" style="max-width:760px;">
+      <div class="card card-pad">
+        <h2 style="font-size:16px;font-weight:600;margin-bottom:14px;">İşletme bilgisi</h2>
+        <form id="biz-form" novalidate>
+          <div class="field" style="margin:0;"><label class="field-label" for="name">İşletme adı</label><input class="input" id="name" data-testid="input-name" /></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px;">
+            <div class="field" style="margin:0;"><label class="field-label" for="location">Konum</label><input class="input" id="location" data-testid="input-location" /></div>
+            <div class="field" style="margin:0;"><label class="field-label" for="address">Adres</label><input class="input" id="address" data-testid="input-address" /></div>
+          </div>
+          <button type="submit" class="btn btn-brand" style="margin-top:16px;" data-testid="submit-business">Kaydet</button>
+        </form>
+      </div>
+
+      <div class="card card-pad" style="margin-top:16px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;">
+        <div>
+          <div class="kpi-label">Davet kodu</div>
+          <div style="font-size:24px;font-weight:700;letter-spacing:5px;color:var(--brand-strong);" id="invite_code" data-testid="invite-code">—</div>
+          <div class="muted" style="font-size:13px;">Personelin bu kod + kendi şifresiyle giriş yapar.</div>
+        </div>
+        <a href="/owner/employees.html" class="btn btn-soft btn-sm">Çalışan yönet</a>
+      </div>
+
+      <!-- Hizmetler -->
+      <div class="card" style="margin-top:16px;overflow:hidden;">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid var(--border);">
+          <h2 style="font-size:16px;font-weight:600;">Hizmetler</h2>
+          <button class="btn btn-soft btn-sm" id="add-service" data-testid="add-service"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg> Ekle</button>
+        </div>
+        <div id="services" style="padding:12px 18px;display:flex;flex-direction:column;gap:10px;" data-testid="services-list"></div>
+        <div style="padding:0 18px 16px;"><button class="btn btn-brand btn-sm" id="save-services">Hizmetleri kaydet</button></div>
+      </div>
+
+      <!-- İstasyonlar -->
+      <div class="card" style="margin-top:16px;overflow:hidden;">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid var(--border);">
+          <div>
+            <h2 style="font-size:16px;font-weight:600;">İstasyonlar</h2>
+            <span class="muted" style="font-size:13px;">Koltuk, masa veya oda — doluluk bunlara göre gösterilir.</span>
+          </div>
+          <button class="btn btn-soft btn-sm" id="add-station" data-testid="add-station"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg> Ekle</button>
+        </div>
+        <div id="stations" style="padding:12px 18px;display:flex;flex-direction:column;gap:8px;" data-testid="stations-list"></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- İstasyon ekleme modalı -->
+  <div class="overlay" id="station-modal">
+    <div class="modal" style="max-width:400px;">
+      <div style="padding:18px 20px;border-bottom:1px solid var(--border);"><h3 style="font-size:17px;font-weight:600;">Yeni istasyon</h3></div>
+      <div style="padding:20px;">
+        <div class="field" style="margin:0;">
+          <label class="field-label" for="station-label">İstasyon adı</label>
+          <input class="input" id="station-label" placeholder="örn. Koltuk 3" maxlength="100" data-testid="station-modal-input" />
+        </div>
+        <div id="station-modal-error" class="field-error" style="display:none;margin-top:8px;"></div>
+      </div>
+      <div style="padding:14px 20px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end;">
+        <button class="btn btn-ghost" id="station-cancel">İptal</button>
+        <button class="btn btn-brand" id="station-save" data-testid="station-modal-save">Ekle</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/shared/theme.js"></script>
+  <script src="/js/shared/api.js"></script>
+  <script src="/js/shared/auth.js"></script>
+  <script src="/js/shared/toast.js"></script>
+  <script src="/js/shared/shell.js"></script>
+  <script src="/js/shared/confirm-modal.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
+    const session = window.Auth.requireRole(['owner']);
+    if (session) {
+      window.Shell.mount({ active: 'business', title: 'İşletme' });
+      const bizId = session.business?.id;
+      let services = [], stations = [];
+
+      async function load() {
+        const data = await window.API.get(`/businesses/${bizId}`);  // stations dahil — tek çağrı
+        const b = data.business;
+        document.getElementById('name').value = b.name||'';
+        document.getElementById('location').value = b.location||'';
+        document.getElementById('address').value = b.address||'';
+        document.getElementById('invite_code').textContent = b.invite_code||'—';
+        services = b.services||[]; renderServices();
+        stations = b.stations||[]; renderStations();
+      }
+
+      function renderServices() {
+        const el = document.getElementById('services');
+        if (!services.length) { el.innerHTML = '<p class="muted" style="font-size:13px;padding:6px 0;">Henüz hizmet yok. "Ekle" ile başla.</p>'; return; }
+        el.innerHTML = '';
+        services.forEach((s,i) => {
+          const row = document.createElement('div');
+          row.style.cssText = 'display:flex;gap:8px;align-items:center;';
+          row.innerHTML = `
+            <input class="input" style="flex:2;" value="${s.name||''}" placeholder="Hizmet adı" data-f="name" />
+            <input class="input" style="width:74px;" type="number" value="${s.duration_minutes||30}" data-f="duration_minutes" title="Dakika" />
+            <input class="input" style="width:90px;" type="number" step="0.01" value="${s.price??''}" placeholder="Ücret" data-f="price" title="Hizmet ücreti (opsiyonel)" />
+            <button class="btn btn-danger btn-icon btn-sm" data-del title="Sil"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button>`;
+          row.querySelectorAll('input').forEach(inp => inp.addEventListener('input', () => {
+            const f=inp.dataset.f; services[i][f] = f==='duration_minutes' ? (parseInt(inp.value)||30) : (f==='price' ? (inp.value||null) : inp.value);
+          }));
+          row.querySelector('[data-del]').addEventListener('click', () => { services.splice(i,1); renderServices(); });
+          el.appendChild(row);
+        });
+      }
+
+      function renderStations() {
+        const el = document.getElementById('stations');
+        if (!stations.length) { el.innerHTML = '<p class="muted" style="font-size:13px;padding:6px 0;">Henüz istasyon yok. "Ekle" ile başla.</p>'; return; }
+        el.innerHTML = '';
+        stations.forEach((s,i) => {
+          const row = document.createElement('div');
+          row.setAttribute('data-testid', `station-${s.id}`);
+          row.style.cssText = 'display:flex;gap:8px;align-items:center;';
+          row.innerHTML = `
+            <input class="input" style="flex:1;" value="${s.label||''}" data-f="label" />
+            <button class="btn btn-danger btn-icon btn-sm" data-del title="Sil"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button>`;
+          const inp = row.querySelector('input');
+          let t;
+          inp.addEventListener('change', () => {
+            clearTimeout(t); t=setTimeout(async () => {
+              try { await window.API.patch(`/stations/${s.id}`, { label: inp.value }); window.Toast.success('İstasyon güncellendi'); }
+              catch(e){ window.Toast.error(e.message); }
+            }, 500);
+          });
+          row.querySelector('[data-del]').addEventListener('click', async () => {
+            if(!(await window.confirmModal({title:'İstasyonu sil',message:`"${s.label}" istasyonu silinecek.`,confirmText:'Sil',danger:true}))) return;
+            try { await window.API.delete(`/stations/${s.id}`); stations.splice(i,1); renderStations(); window.Toast.success('Silindi'); }
+            catch(e){ window.Toast.error(e.message); }
+          });
+          el.appendChild(row);
+        });
+      }
+
+      // --- İstasyon modalı ---
+      const modal = document.getElementById('station-modal');
+      const modalInput = document.getElementById('station-label');
+      const modalErr = document.getElementById('station-modal-error');
+      function openModal(){ modalInput.value=''; modalErr.style.display='none'; modal.classList.add('open'); setTimeout(()=>modalInput.focus(),100); }
+      function closeModal(){ modal.classList.remove('open'); }
+      document.getElementById('add-station').addEventListener('click', openModal);
+      document.getElementById('station-cancel').addEventListener('click', closeModal);
+      modal.addEventListener('click', (e)=>{ if(e.target===modal) closeModal(); });
+      modalInput.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); document.getElementById('station-save').click(); } });
+      document.getElementById('station-save').addEventListener('click', async () => {
+        const label = modalInput.value.trim();
+        if(!label){ modalErr.textContent='İstasyon adı gir.'; modalErr.style.display='block'; return; }
+        const btn = document.getElementById('station-save'); btn.disabled=true; btn.innerHTML='<span class="spinner spinner-light"></span>';
+        try {
+          const r = await window.API.post('/stations', { label, position: stations.length });
+          stations.push(r.station); renderStations(); closeModal(); window.Toast.success('İstasyon eklendi');
+        } catch(e){ modalErr.textContent=e.message; modalErr.style.display='block'; }
+        finally { btn.disabled=false; btn.textContent='Ekle'; }
+      });
+
+      document.getElementById('add-service').addEventListener('click', () => { services.push({id:null,name:'',duration_minutes:30,price:null}); renderServices(); });
+      document.getElementById('save-services').addEventListener('click', async () => {
+        try {
+          await window.API.put(`/businesses/${bizId}`, { services: services.map(s=>({id:s.id,name:s.name,duration_minutes:s.duration_minutes,price:s.price})) });
+          window.Toast.success('Hizmetler kaydedildi'); load();
+        } catch(e){ window.Toast.error(e.message); }
+      });
+      document.getElementById('biz-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        try { await window.API.put(`/businesses/${bizId}`, { name:document.getElementById('name').value, location:document.getElementById('location').value, address:document.getElementById('address').value }); window.Toast.success('Kaydedildi'); }
+        catch(err){ window.Toast.error(err.message); }
+      });
+
+      load();
+    }
+  </script>
+</body>
+</html>

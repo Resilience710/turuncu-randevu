@@ -1,0 +1,158 @@
+{
+  "theme": "Light",
+  "archetype": "Organic & Earthy / Vibrant Play",
+  "reasoning": "A multi-sector marketplace application requires a clean, accessible light mode to showcase diverse businesses clearly. Orange and white create an energetic, friendly, and approachable vibe.",
+  "colors": {
+    "primary": "#F97316",
+    "primary_hover": "#EA580C",
+    "primary_light": "#FFEDD5",
+    "background": "#FFFFFF",
+    "surface": "#F8F9FA",
+    "surface_secondary": "#F1F5F9",
+    "text_primary": "#1E293B",
+    "text_secondary": "#64748B",
+    "text_tertiary": "#94A3B8",
+    "border": "#E2E8F0",
+    "danger": "#EF4444",
+    "danger_light": "#FEE2E2",
+    "success": "#22C55E"
+  },
+  "typography": {
+    "font_family": "System",
+    "h1": {
+      "size": 32,
+      "weight": "800",
+      "line_height": 40
+    },
+    "h2": {
+      "size": 24,
+      "weight": "700",
+      "line_height": 32
+    },
+    "h3": {
+      "size": 18,
+      "weight": "600",
+      "line_height": 28
+    },
+    "body_large": {
+      "size": 16,
+      "weight": "400",
+      "line_height": 24
+    },
+    "body": {
+      "size": 14,
+      "weight": "400",
+      "line_height": 20
+    },
+    "label": {
+      "size": 12,
+      "weight": "600",
+      "text_transform": "uppercase"
+    }
+  },
+  "spacing": {
+    "xs": 4,
+    "sm": 8,
+    "md": 16,
+    "lg": 24,
+    "xl": 32,
+    "2xl": 48,
+    "container_padding": 16
+  },
+  "radius": {
+    "sm": 4,
+    "md": 8,
+    "lg": 12,
+    "xl": 16,
+    "full": 9999
+  },
+  "shadows": {
+    "sm": "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
+    "md": "0 4px 6px -1px rgba(0, 0, 0, 0.1)"
+  },
+  "icons": {
+    "library": "@expo/vector-icons",
+    "color_default": "#64748B",
+    "color_active": "#F97316"
+  },
+  "components": [
+    {
+      "name": "RoleToggle",
+      "description": "Tab or toggle button to switch between Customer and Business Owner on login/signup.",
+      "styles": "Flex row, rounded-full bg-surface_secondary p-1, active tab gets bg-white, shadow-sm, text-primary."
+    },
+    {
+      "name": "SearchBarHeader",
+      "description": "Top header with search input, magnifying glass icon, and a location selector dropdown.",
+      "styles": "bg-white p-4 shadow-sm. Search input rounded-lg bg-surface border border-border."
+    },
+    {
+      "name": "SectorCategoryList",
+      "description": "Horizontal scroll view of categories (Barber, Dentist, etc.)",
+      "styles": "Items are rounded-xl bg-white border border-border p-3. Active item border-primary text-primary."
+    },
+    {
+      "name": "BusinessCard",
+      "description": "Card showing business image, name, address, and rating.",
+      "styles": "rounded-xl bg-white shadow-sm overflow-hidden mb-4. Image h-32. Content p-4."
+    },
+    {
+      "name": "TimeSlotGrid",
+      "description": "Grid of appointment times. Free vs Taken states.",
+      "styles": "Taken slots: bg-danger_light border-danger text-danger. Free slots: border-primary text-primary bg-white. Selected slot: bg-primary text-white."
+    },
+    {
+      "name": "OwnerDashboardWidgets",
+      "description": "Cards for owner stats or quick actions (Manual Appointment, Add Staff).",
+      "styles": "bg-primary_light p-4 rounded-xl border border-primary/20."
+    },
+    {
+      "name": "AppointmentListView",
+      "description": "Toggleable view for staff/owner to see appointments as a vertical list or a 2x2/4x4 grid.",
+      "styles": "Toggle icons top right. List item: row layout. Grid item: square card layout."
+    }
+  ],
+  "image_urls": [
+    {
+      "category": "Barbershop",
+      "url": "https://images.unsplash.com/photo-1610475680335-dafab5475150?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAxODF8MHwxfHNlYXJjaHwxfHxiYXJiZXJzaG9wJTIwaW50ZXJpb3J8ZW58MHx8fHwxNzc4OTMwNzE0fDA&ixlib=rb-4.1.0&q=85",
+      "description": "Modern barbershop interior"
+    },
+    {
+      "category": "Dentist",
+      "url": "https://images.unsplash.com/photo-1629909613654-28e377c37b09?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1ODh8MHwxfHNlYXJjaHwxfHxkZW50aXN0JTIwY2xpbmljfGVufDB8fHx8MTc3ODkzMDcxNHww&ixlib=rb-4.1.0&q=85",
+      "description": "Clean dentist clinic"
+    },
+    {
+      "category": "Psychologist",
+      "url": "https://images.unsplash.com/photo-1616740793717-0aca29b92221?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1Nzl8MHwxfHNlYXJjaHwxfHxwc3ljaG9sb2dpc3QlMjBvZmZpY2UlMjB0aGVyYXB5fGVufDB8fHx8MTc3ODkzMDcxNHww&ixlib=rb-4.1.0&q=85",
+      "description": "Psychologist office setup"
+    },
+    {
+      "category": "Physiotherapist",
+      "url": "https://images.unsplash.com/photo-1630226040750-d934f017f0e4?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjY2NzZ8MHwxfHNlYXJjaHwxfHxwaHlzaW90aGVyYXB5JTIwY2xpbmljfGVufDB8fHx8MTc3ODkzMDcxNHww&ixlib=rb-4.1.0&q=85",
+      "description": "Physiotherapy clinic room"
+    },
+    {
+      "category": "Nutritionist",
+      "url": "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Nzh8MHwxfHNlYXJjaHwxfHxoZWFsdGh5JTIwZm9vZCUyMG51dHJpdGlvbmlzdHxlbnwwfHx8fDE3Nzg5MzA3MTR8MA&ixlib=rb-4.1.0&q=85",
+      "description": "Nutritionist fresh food bowl"
+    }
+  ],
+  "testing": {
+    "guideline": "All interactive elements, forms, and navigation buttons must include a `data-testid` attribute (e.g., `data-testid=\"customer-login-button\"`). Use kebab-case."
+  },
+  "instructions_to_main_agent": [
+    "Build this as a React Native (Expo) app using standard components. Target file extension is `.js` (e.g., `/app/frontend/app/index.js`), avoid `.tsx`.",
+    "Implement navigation using Expo Router.",
+    "Map the provided design tokens manually in your standard React Native StyleSheet, focusing heavily on primary Orange and White aesthetics.",
+    "Onboarding screen must split into 'Customer' and 'Business Owner'. Business owner gets a specific QR code generation option upon signup to invite staff.",
+    "Staff login should use a QR code scanning feature accessible from a top corner icon on the login screen.",
+    "Create a dynamic Home Screen listing sectors (Barber, Dentist, Psychologist, Physiotherapist, Nutritionist), with a search/location bar at the top.",
+    "On business pages, appointments must show taken slots clearly in RED (#EF4444) and strictly prevent multi-booking conflicts.",
+    "Include 'Cancel Appointment' logic.",
+    "The Owner/Staff dashboard must provide toggles for appointments list view (vertical) versus grid view (horizontal pairs or 4s).",
+    "Create the required REST API endpoints in Python (FastAPI/Flask) allowing JSON appointment data export.",
+    "Ensure `data-testid` is added across all interactable components to follow testing guidelines."
+  ]
+}

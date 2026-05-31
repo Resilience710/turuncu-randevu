@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#F97316" />
+  <title>Genel Bakış — Turuncu Randevu</title>
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="icon" type="image/svg+xml" href="/icons/pwa-icon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script>(function(){var t=localStorage.getItem('turuncu-theme')||((window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light');document.documentElement.classList.toggle('dark',t==='dark');})();</script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="/js/shared/tailwind-config.js"></script>
+  <link rel="stylesheet" href="/css/theme.css" />
+</head>
+<body>
+  <main class="shell-main">
+    <div class="shell-page">
+      <!-- KPI -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;" data-testid="stats-cards">
+        <div class="kpi"><div class="kpi-label">Bugün</div><div class="kpi-value" id="kpi-today">—</div><div class="kpi-sub">toplam randevu</div></div>
+        <div class="kpi"><div class="kpi-label">Aktif</div><div class="kpi-value" id="kpi-active" style="color:var(--brand);">—</div><div class="kpi-sub">bekleyen + işlemde</div></div>
+        <div class="kpi"><div class="kpi-label">Tamamlanan</div><div class="kpi-value" id="kpi-done" style="color:var(--success);">—</div><div class="kpi-sub">bugün biten</div></div>
+        <div class="kpi"><div class="kpi-label">İptal</div><div class="kpi-value" id="kpi-cancel" style="color:var(--muted);">—</div><div class="kpi-sub">bugün iptal</div></div>
+      </div>
+
+      <!-- Randevular -->
+      <div class="card" style="margin-top:22px;overflow:hidden;">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid var(--border);">
+          <div>
+            <h2 style="font-size:16px;font-weight:600;">Randevular</h2>
+            <span class="muted" style="font-size:13px;" id="appt-date"></span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="display:flex;gap:4px;background:var(--surface-2);padding:3px;border-radius:9px;" id="appt-filter">
+              <button class="btn btn-sm" data-filter="today" style="height:30px;">Bugün</button>
+              <button class="btn btn-sm" data-filter="upcoming" style="height:30px;">Yaklaşan</button>
+            </div>
+            <a href="/owner/appointments-manual.html" class="btn btn-soft btn-sm" data-testid="add-manual">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+              Manuel ekle
+            </a>
+          </div>
+        </div>
+        <div id="appt-body" data-testid="appointments-list">
+          <div style="padding:20px;display:flex;flex-direction:column;gap:10px;">
+            <div class="skeleton" style="height:54px;"></div><div class="skeleton" style="height:54px;"></div><div class="skeleton" style="height:54px;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="/js/shared/theme.js"></script>
+  <script src="/js/shared/api.js"></script>
+  <script src="/js/shared/auth.js"></script>
+  <script src="/js/shared/toast.js"></script>
+  <script src="/js/shared/shell.js"></script>
+  <script src="/js/shared/confirm-modal.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
+    const session = window.Auth.requireRole(['owner','staff']);
+    if (session) {
+      window.Shell.mount({ active: 'dashboard', title: 'Genel Bakış' });
+      const role = session.user.role;
+
+      const STATUS = {
+        booked:     { label: 'Onaylandı', cls: 'badge-brand' },
+        in_service: { label: 'İşlemde',   cls: 'badge-success' },
+        done:       { label: 'Tamamlandı',cls: 'badge-muted' },
+        cancelled:  { label: 'İptal',     cls: 'badge-danger' },
+        no_show:    { label: 'Gelmedi',   cls: 'badge-danger' },
+      };
+      const today = new Date().toISOString().slice(0,10);
+      const trDate = new Date().toLocaleDateString('tr-TR', { day:'numeric', month:'long', weekday:'long' });
+      document.getElementById('appt-date').textContent = trDate;
+      let filterMode = 'today';
+      let lastAll = [];
+
+      function dateChip(d) {
+        if (d === today) return '<span class="badge badge-info" style="font-size:11px;">Bugün</span>';
+        const dt = new Date(d + 'T00:00');
+        return `<span class="badge badge-muted" style="font-size:11px;">${dt.toLocaleDateString('tr-TR',{day:'numeric',month:'short'})}</span>`;
+      }
+
+      function row(a) {
+        const st = STATUS[a.status] || STATUS.booked;
+        const canStart = a.status === 'booked';
+        const canFinish = a.status === 'in_service' || a.status === 'booked';
+        const canCancel = a.status === 'booked' || a.status === 'in_service';
+        return `
+        <div style="display:flex;align-items:center;gap:14px;padding:13px 18px;border-bottom:1px solid var(--border);" data-testid="appt-${a.id}">
+          <div style="width:64px;text-align:center;flex-shrink:0;">
+            <div style="font-weight:700;font-size:15px;" class="tnum">${a.time}</div>
+            <div style="margin-top:3px;">${dateChip(a.date)}</div>
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${a.service_name}</div>
+            <div class="muted" style="font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${a.customer_name||'—'}${a.customer_phone_masked?' · '+a.customer_phone_masked:''}${a.staff_name?' · '+a.staff_name:''}</div>
+          </div>
+          <span class="badge ${st.cls}">${st.label}</span>
+          <div style="display:flex;gap:6px;flex-shrink:0;">
+            ${canStart?`<button class="btn btn-soft btn-sm" data-act="start" data-id="${a.id}" data-testid="start-${a.id}">Başlat</button>`:''}
+            ${canFinish?`<button class="btn btn-success btn-sm" data-act="finish" data-id="${a.id}" data-testid="finish-${a.id}">Bitir</button>`:''}
+            ${canCancel?`<button class="btn btn-danger btn-sm" data-act="cancel" data-id="${a.id}" data-testid="cancel-${a.id}">İptal</button>`:''}
+          </div>
+        </div>`;
+      }
+
+      function paintFilter() {
+        document.querySelectorAll('#appt-filter [data-filter]').forEach(b =>
+          b.className = 'btn btn-sm ' + (b.dataset.filter === filterMode ? 'btn-brand' : 'btn-soft'));
+      }
+      function renderList() {
+        const body = document.getElementById('appt-body');
+        let list;
+        if (filterMode === 'today') list = lastAll.filter(a => a.date === today);
+        else list = lastAll.filter(a => a.date > today && a.status !== 'cancelled');
+        list = list.slice(0, 80);
+        if (!list.length) {
+          const msg = filterMode === 'today' ? 'Bugün randevu yok' : 'Yaklaşan randevu yok';
+          body.innerHTML = `<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><h3>${msg}</h3><p>Manuel randevu ekleyebilir ya da müşterilerden bekleyebilirsin.</p></div>`;
+          return;
+        }
+        body.innerHTML = list.map(row).join('');
+        bindActions(body);
+      }
+
+      document.querySelectorAll('#appt-filter [data-filter]').forEach(b =>
+        b.addEventListener('click', () => { filterMode = b.dataset.filter; paintFilter(); renderList(); }));
+
+      function bindActions(body) {
+        body.querySelectorAll('button[data-act]').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const id = btn.dataset.id, act = btn.dataset.act;
+            btn.disabled = true;
+            try {
+              if (act==='start') await window.API.post(`/appointments/${id}/start`);
+              if (act==='finish') await window.API.post(`/appointments/${id}/finish`);
+              if (act==='cancel') { if(!(await window.confirmModal({title:'Randevuyu iptal et',message:'Bu randevu iptal edilecek.',confirmText:'İptal et',danger:true}))){btn.disabled=false;return;} await window.API.patch(`/appointments/${id}/cancel`,{reason:'Panelden iptal'}); }
+              window.Toast.success('Güncellendi');
+              refresh();
+            } catch(e){ window.Toast.error(e.message); btn.disabled=false; }
+          });
+        });
+      }
+
+      async function refresh() {
+        try {
+          const data = await window.API.get('/appointments');
+          lastAll = data.appointments || [];
+          const todays = lastAll.filter(a => a.date === today);
+          document.getElementById('kpi-today').textContent = todays.filter(a=>a.status!=='cancelled').length;
+          document.getElementById('kpi-active').textContent = lastAll.filter(a=>a.status==='booked'||a.status==='in_service').length;
+          document.getElementById('kpi-done').textContent = todays.filter(a=>a.status==='done').length;
+          document.getElementById('kpi-cancel').textContent = todays.filter(a=>a.status==='cancelled').length;
+          renderList();
+        } catch(e){ window.Toast.error(e.message); }
+      }
+
+      paintFilter();
+      refresh();
+      setInterval(refresh, 8000);
+    }
+  </script>
+</body>
+</html>

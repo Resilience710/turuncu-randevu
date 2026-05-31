@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#F97316" />
+  <title>Hesap — Turuncu Randevu</title>
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="icon" type="image/svg+xml" href="/icons/pwa-icon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script>(function(){var t=localStorage.getItem('turuncu-theme')||((window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light');document.documentElement.classList.toggle('dark',t==='dark');})();</script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="/js/shared/tailwind-config.js"></script>
+  <link rel="stylesheet" href="/css/theme.css" />
+</head>
+<body>
+  <main class="shell-main">
+    <div class="shell-page" style="max-width:620px;">
+      <div class="card card-pad" data-testid="profile-card">
+        <div style="display:flex;align-items:center;gap:14px;">
+          <div class="sb-avatar" style="width:56px;height:56px;font-size:22px;" id="avatar">?</div>
+          <div><div style="font-size:18px;font-weight:600;" id="u-name"></div><div class="muted" style="font-size:13px;" id="u-role"></div></div>
+        </div>
+        <hr class="divider" style="margin:16px 0;" />
+        <div style="display:grid;grid-template-columns:auto 1fr;gap:10px 18px;font-size:14px;">
+          <span class="muted">İşletme</span><span id="u-biz"></span>
+          <span class="muted">Telefon</span><span data-testid="phone-masked" id="u-phone"></span>
+          <span class="muted">Gmail</span><span id="u-gmail"></span>
+          <span class="muted" id="invite-label">Davet kodu</span><span style="font-weight:600;letter-spacing:3px;color:var(--brand-strong);" id="u-invite"></span>
+        </div>
+      </div>
+
+      <div class="card card-pad" style="margin-top:16px;display:flex;align-items:center;justify-content:space-between;">
+        <div><div style="font-weight:600;">Görünüm</div><div class="muted" style="font-size:13px;">Açık veya koyu tema</div></div>
+        <div style="display:flex;gap:6px;background:var(--surface-2);padding:4px;border-radius:10px;">
+          <button class="btn btn-sm" id="theme-light" data-testid="theme-light">Açık</button>
+          <button class="btn btn-sm" id="theme-dark" data-testid="theme-dark">Koyu</button>
+        </div>
+      </div>
+
+      <button class="btn btn-danger btn-block" style="margin-top:16px;" onclick="window.Auth.logout()" data-testid="logout-button">Çıkış yap</button>
+    </div>
+  </main>
+
+  <script src="/js/shared/theme.js"></script>
+  <script src="/js/shared/api.js"></script>
+  <script src="/js/shared/auth.js"></script>
+  <script src="/js/shared/toast.js"></script>
+  <script src="/js/shared/shell.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
+    const session = window.Auth.requireRole(['owner','staff']);
+    if (session) {
+      window.Shell.mount({ active: 'account', title: 'Hesap' });
+      const u = session.user, b = session.business || {};
+      document.getElementById('avatar').textContent = (u.name||'?').charAt(0).toUpperCase();
+      document.getElementById('u-name').textContent = u.name||'';
+      document.getElementById('u-role').textContent = u.role==='owner' ? 'İşletme sahibi' : (u.title||'Personel');
+      document.getElementById('u-biz').textContent = b.name||'—';
+      document.getElementById('u-phone').textContent = u.phone_masked||'—';
+      document.getElementById('u-gmail').textContent = u.gmail||'—';
+      if (u.role==='owner' && b.invite_code) { document.getElementById('u-invite').textContent = b.invite_code; }
+      else { document.getElementById('invite-label').style.display='none'; document.getElementById('u-invite').style.display='none'; }
+
+      function paint() {
+        const dark = window.Theme.isDark();
+        document.getElementById('theme-light').className = 'btn btn-sm ' + (dark?'btn-soft':'btn-brand');
+        document.getElementById('theme-dark').className = 'btn btn-sm ' + (dark?'btn-brand':'btn-soft');
+      }
+      paint();
+      document.getElementById('theme-light').addEventListener('click', ()=>{ window.Theme.set('light'); paint(); });
+      document.getElementById('theme-dark').addEventListener('click', ()=>{ window.Theme.set('dark'); paint(); });
+    }
+  </script>
+</body>
+</html>

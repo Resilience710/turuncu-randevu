@@ -1,0 +1,37 @@
+# Render.com Blueprint — tek servis: FastAPI (API + statik frontend aynı origin).
+# Deploy: Render Dashboard → New → Blueprint → bu repo'yu seç.
+services:
+  - type: web
+    name: turuncu-randevu
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/
+    autoDeploy: true
+    envVars:
+      # --- Supabase (Frankfurt) — lokal .env ile AYNI olmalı ki şifreli veri çözülsün ---
+      - key: DATABASE_URL
+        sync: false
+      - key: PHONE_ENCRYPTION_KEY
+        sync: false
+      - key: PHONE_HASH_PEPPER
+        sync: false
+      - key: OTP_SECRET
+        sync: false
+      # --- Sabitler ---
+      - key: OTP_TTL_SECONDS
+        value: "300"
+      - key: APP_ENV
+        value: production
+      - key: LOG_LEVEL
+        value: INFO
+      - key: STATIC_DIR
+        value: /app/static
+      # --- Netgsm (şimdilik boş; OTP ekrana düşer) ---
+      - key: NETGSM_USERCODE
+        sync: false
+      - key: NETGSM_PASSWORD
+        sync: false
+      - key: NETGSM_MSGHEADER
+        sync: false

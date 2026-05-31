@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#F97316" />
+  <title>Doluluk — Turuncu Randevu</title>
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="icon" type="image/svg+xml" href="/icons/pwa-icon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script>(function(){var t=localStorage.getItem('turuncu-theme')||((window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light');document.documentElement.classList.toggle('dark',t==='dark');})();</script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="/js/shared/tailwind-config.js"></script>
+  <link rel="stylesheet" href="/css/theme.css" />
+</head>
+<body>
+  <main class="shell-main">
+    <div class="shell-page">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+        <p class="muted" style="font-size:14px;">Canlı istasyon durumu — 5 saniyede bir güncellenir.</p>
+        <span class="badge badge-muted" id="last-update" data-testid="last-update"></span>
+      </div>
+      <div id="grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;" data-testid="occupancy-grid">
+        <div class="skeleton" style="height:130px;border-radius:12px;"></div>
+        <div class="skeleton" style="height:130px;border-radius:12px;"></div>
+        <div class="skeleton" style="height:130px;border-radius:12px;"></div>
+      </div>
+    </div>
+  </main>
+
+  <script src="/js/shared/theme.js"></script>
+  <script src="/js/shared/api.js"></script>
+  <script src="/js/shared/auth.js"></script>
+  <script src="/js/shared/toast.js"></script>
+  <script src="/js/shared/shell.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
+    const session = window.Auth.requireRole(['owner']);
+    if (session) {
+      window.Shell.mount({ active: 'occupancy', title: 'Doluluk' });
+      const grid = document.getElementById('grid');
+      const META = {
+        idle:       { label:'Boş',     color:'var(--muted)',   bg:'var(--surface-2)',     badge:'badge-muted' },
+        waiting:    { label:'Bekliyor',color:'var(--brand)',   bg:'var(--brand-subtle)',  badge:'badge-brand' },
+        in_service: { label:'İşlemde', color:'var(--success)', bg:'var(--success-subtle)',badge:'badge-success' },
+      };
+
+      function card(s) {
+        const m = META[s.status] || META.idle;
+        return `
+        <div class="card card-pad" data-testid="station-card-${s.id}" style="border-left:4px solid ${m.color};">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+            <strong style="font-size:16px;">${s.label}</strong>
+            <span class="badge ${m.badge}"><span class="badge-dot"></span>${m.label}</span>
+          </div>
+          ${s.current_appointment ? `
+            <div style="font-size:13px;">
+              <div class="muted" style="font-size:12px;text-transform:uppercase;letter-spacing:.03em;">Şu an</div>
+              <div style="font-weight:600;margin-top:2px;">${s.current_appointment.customer_name||'—'}</div>
+              <div class="muted">${s.current_appointment.service_name}</div>
+            </div>` : ''}
+          ${s.next_appointment ? `
+            <div style="font-size:13px;margin-top:${s.current_appointment?'10px':'0'};padding-top:${s.current_appointment?'10px':'0'};${s.current_appointment?'border-top:1px solid var(--border);':''}">
+              <div class="muted" style="font-size:12px;text-transform:uppercase;letter-spacing:.03em;">Sıradaki · ${s.next_appointment.time}</div>
+              <div style="font-weight:500;margin-top:2px;">${s.next_appointment.customer_name||'—'}</div>
+            </div>` : ''}
+          ${(!s.current_appointment && !s.next_appointment) ? '<div class="muted" style="font-size:13px;">Şu an müşteri yok</div>' : ''}
+        </div>`;
+      }
+
+      async function refresh() {
+        try {
+          const data = await window.API.get('/stations/occupancy');
+          const st = data.stations || [];
+          if (!st.length) {
+            grid.style.display='block';
+            grid.innerHTML = `<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="6" height="16" rx="1.5"/><rect x="10.5" y="4" width="6" height="16" rx="1.5"/></svg><h3>Henüz istasyon yok</h3><p><a href="/owner/business-settings.html" style="color:var(--brand-strong);font-weight:600;">İşletme ayarlarından</a> istasyon ekle.</p></div>`;
+          } else {
+            grid.style.display='grid';
+            grid.innerHTML = st.map(card).join('');
+          }
+          document.getElementById('last-update').textContent = new Date().toLocaleTimeString('tr-TR');
+        } catch(e) { window.Toast.error(e.message); }
+      }
+      refresh();
+      setInterval(refresh, 5000);
+    }
+  </script>
+</body>
+</html>

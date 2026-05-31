@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#F97316" />
+  <title>İşletme Aç — Turuncu Randevu</title>
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="icon" type="image/svg+xml" href="/icons/pwa-icon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script>(function(){var t=localStorage.getItem('turuncu-theme')||((window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light');document.documentElement.classList.toggle('dark',t==='dark');})();</script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="/js/shared/tailwind-config.js"></script>
+  <link rel="stylesheet" href="/css/theme.css" />
+  <style>
+    .auth-wrap { min-height: 100vh; display: grid; grid-template-columns: 1fr; }
+    @media (min-width: 1024px) { .auth-wrap { grid-template-columns: 1fr 1.05fr; } }
+    .auth-aside { display:none; position:relative; overflow:hidden; background:var(--sidebar); color:#fff; padding:56px; flex-direction:column; justify-content:space-between; }
+    @media (min-width:1024px){ .auth-aside{ display:flex; } }
+    .auth-aside::before{ content:''; position:absolute; width:440px; height:440px; border-radius:50%; background:radial-gradient(circle,rgba(249,115,22,.42),transparent 70%); top:-130px; right:-130px; }
+    .auth-form-col { display:flex; flex-direction:column; justify-content:center; padding:40px 22px; }
+    @media (min-width:1024px){ .auth-form-col{ padding:52px 56px; } }
+    .auth-card { width:100%; max-width:460px; margin:0 auto; }
+  </style>
+</head>
+<body>
+<div class="auth-wrap">
+  <aside class="auth-aside">
+    <a href="/index.html" style="position:relative;z-index:1;display:flex;align-items:center;gap:11px;color:#fff;text-decoration:none;">
+      <span style="width:40px;height:40px;border-radius:11px;background:var(--brand);display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>
+      <strong style="font-size:18px;">Turuncu Randevu</strong>
+    </a>
+    <div style="position:relative;z-index:1;max-width:400px;">
+      <h1 style="font-size:34px;line-height:1.12;font-weight:700;">Üç adımda kurulu.</h1>
+      <ol style="list-style:none;padding:0;margin:24px 0 0;display:flex;flex-direction:column;gap:16px;">
+        <li style="display:flex;gap:13px;"><span style="flex-shrink:0;width:30px;height:30px;border-radius:999px;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;">1</span><div><strong style="display:block;">Bu formu doldur</strong><span style="color:#94A3B8;font-size:13px;">Bilgilerini ve işletmeni gir.</span></div></li>
+        <li style="display:flex;gap:13px;"><span style="flex-shrink:0;width:30px;height:30px;border-radius:999px;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;">2</span><div><strong style="display:block;">Davet kodunu personeline ver</strong><span style="color:#94A3B8;font-size:13px;">Çalışanlar bu kodla giriş yapar.</span></div></li>
+        <li style="display:flex;gap:13px;"><span style="flex-shrink:0;width:30px;height:30px;border-radius:999px;background:var(--brand);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;">3</span><div><strong style="display:block;">Tezgâha tablet koy</strong><span style="color:#94A3B8;font-size:13px;">Kiosk modunda sırayı yönet.</span></div></li>
+      </ol>
+    </div>
+    <div style="position:relative;z-index:1;color:#64748B;font-size:13px;">© 2026 Turuncu Randevu</div>
+  </aside>
+
+  <main class="auth-form-col">
+    <div class="auth-card">
+      <a href="/index.html" class="muted" style="font-size:13px;text-decoration:none;display:inline-flex;align-items:center;gap:5px;margin-bottom:16px;">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 18l-6-6 6-6"/></svg> Girişe dön
+      </a>
+      <h2 style="font-size:23px;font-weight:700;">İşletme aç</h2>
+      <p class="muted" style="font-size:14px;margin:4px 0 22px;">Kayıt biter bitmez davet kodun hazır olur.</p>
+
+      <form id="form" novalidate>
+        <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:10px;">Senin bilgilerin</div>
+        <div class="field" style="margin:0;"><label class="field-label" for="name">Ad soyad</label><input class="input" id="name" required maxlength="200" autocomplete="name" placeholder="Selim Karaca" data-testid="input-name" /></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px;">
+          <div class="field" style="margin:0;"><label class="field-label" for="phone">Telefon</label><input class="input" id="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="0532..." data-testid="input-phone" /></div>
+          <div class="field" style="margin:0;"><label class="field-label" for="gmail">Gmail</label><input class="input" id="gmail" type="email" autocomplete="email" placeholder="@gmail.com" data-testid="input-gmail" /></div>
+        </div>
+        <p class="field-hint" style="margin-top:6px;">Telefon ya da Gmail'den en az biri gerekli.</p>
+        <div class="field"><label class="field-label" for="password">Şifre</label><input class="input" id="password" type="password" required minlength="8" autocomplete="new-password" placeholder="En az 8 karakter" data-testid="input-password" /><span class="field-hint">En az 8 karakter, bir harf ve bir rakam içermeli.</span></div>
+
+        <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:24px 0 10px;padding-top:20px;border-top:1px solid var(--border);">İşletmen</div>
+        <div class="field" style="margin:0;"><label class="field-label" for="business_name">İşletme adı</label><input class="input" id="business_name" required maxlength="200" placeholder="Karaca Kuaför" data-testid="input-business-name" /></div>
+        <div class="field"><label class="field-label">Sektör</label><div id="sectors" style="display:flex;flex-wrap:wrap;gap:8px;" data-testid="sector-list"></div></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px;">
+          <div class="field" style="margin:0;"><label class="field-label" for="location">Konum</label><input class="input" id="location" placeholder="İstanbul · Bahçelievler" data-testid="input-location" /></div>
+          <div class="field" style="margin:0;"><label class="field-label" for="address">Adres</label><input class="input" id="address" placeholder="Opsiyonel" data-testid="input-address" /></div>
+        </div>
+
+        <div id="form-error" class="field-error" role="alert" aria-live="polite" style="display:none;margin-top:14px;"></div>
+        <button type="submit" class="btn btn-brand btn-block btn-lg" style="margin-top:20px;" data-testid="submit-owner-register">İşletmemi aç</button>
+      </form>
+      <p class="muted" style="text-align:center;font-size:14px;margin-top:18px;">Zaten işletmen var mı? <a href="/index.html?role=owner" style="color:var(--brand-strong);font-weight:600;text-decoration:none;">Giriş yap</a></p>
+    </div>
+  </main>
+</div>
+
+<script src="/js/shared/theme.js"></script>
+<script src="/js/shared/api.js"></script>
+<script src="/js/shared/auth.js"></script>
+<script src="/js/shared/toast.js"></script>
+<script>
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
+  const form=document.getElementById('form'), errEl=document.getElementById('form-error'), sectorsEl=document.getElementById('sectors');
+  const showErr=(m)=>{errEl.textContent=m;errEl.style.display='block';}; const clr=()=>{errEl.style.display='none';};
+  let activeSector=null;
+  const chipEls=[];
+  function paintActive(){ chipEls.forEach(c=>c.classList.toggle('active', c.dataset.sid===activeSector)); }
+  async function loadSectors(){
+    try{
+      const d=await window.API.get('/sectors');   // sadece bir kez çekilir
+      sectorsEl.innerHTML=''; chipEls.length=0;
+      d.sectors.forEach(s=>{
+        const c=document.createElement('button');
+        c.type='button'; c.className='chip'; c.textContent=s.label;
+        c.dataset.sid=s.id;
+        c.setAttribute('data-testid',`sector-${s.id}`);
+        c.addEventListener('click',()=>{ activeSector=s.id; paintActive(); clr(); });  // anında, API yok
+        sectorsEl.appendChild(c); chipEls.push(c);
+      });
+    }catch(e){showErr('Sektör listesi yüklenemedi.');}
+  }
+  loadSectors();
+  form.querySelectorAll('input').forEach(i=>i.addEventListener('input',clr));
+  form.addEventListener('submit', async (e)=>{
+    e.preventDefault(); clr();
+    if(!activeSector){showErr('Sektör seç.');return;}
+    const phone=document.getElementById('phone').value.trim(), gmail=document.getElementById('gmail').value.trim();
+    if(!phone&&!gmail){showErr("Telefon ya da Gmail'den en az biri gerekli.");return;}
+    const pwErr=window.validatePassword(document.getElementById('password').value);
+    if(pwErr){showErr(pwErr);return;}
+    const b=form.querySelector('button[type=submit]'); const o=b.textContent; b.disabled=true; b.innerHTML='<span class="spinner spinner-light"></span>';
+    try{
+      const r=await window.API.post('/auth/owner/register',{
+        name:document.getElementById('name').value.trim(),
+        phone:phone||null, gmail:gmail||null,
+        password:document.getElementById('password').value,
+        business_name:document.getElementById('business_name').value.trim(),
+        sector:activeSector,
+        address:document.getElementById('address').value.trim()||null,
+        location:document.getElementById('location').value.trim()||null,
+      });
+      window.API.setSession(r);
+      window.Toast.success((r.business?.invite_code)?('İşletme açıldı! Davet kodun: '+r.business.invite_code):'İşletme açıldı!',{duration:4000});
+      setTimeout(()=>location.href='/owner/dashboard.html',1200);
+    }catch(err){showErr(err.message||'Kayıt başarısız.');b.disabled=false;b.textContent=o;}
+  });
+</script>
+</body>
+</html>

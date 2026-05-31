@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#F97316" />
+  <title>Randevu Al — Turuncu Randevu</title>
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="icon" type="image/svg+xml" href="/icons/pwa-icon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script>(function(){var t=localStorage.getItem('turuncu-theme')||((window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light');document.documentElement.classList.toggle('dark',t==='dark');})();</script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="/js/shared/tailwind-config.js"></script>
+  <link rel="stylesheet" href="/css/theme.css" />
+</head>
+<body>
+  <main class="consumer-main">
+    <div class="consumer-page" style="max-width:760px;">
+      <a href="/customer/businesses.html" class="muted" style="font-size:13px;text-decoration:none;display:inline-flex;align-items:center;gap:5px;margin-bottom:14px;">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 18l-6-6 6-6"/></svg> Keşfet'e dön
+      </a>
+      <div id="content"><div class="skeleton" style="height:200px;border-radius:12px;"></div></div>
+    </div>
+  </main>
+
+  <script src="/js/shared/theme.js"></script>
+  <script src="/js/shared/api.js"></script>
+  <script src="/js/shared/auth.js"></script>
+  <script src="/js/shared/toast.js"></script>
+  <script src="/js/shared/topnav.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
+    const session = window.Auth.requireRole(['customer']);
+    if (session) {
+      window.TopNav.mount('home');
+      const id = new URLSearchParams(location.search).get('id');
+      const content = document.getElementById('content');
+      if (!id) { content.innerHTML = '<p class="muted">Geçersiz işletme.</p>'; throw 0; }
+      let state = { business:null, service:null, staff:null, date:'', slots:[] };
+      const todayPlus = n => { const d=new Date(); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); };
+      const dayLabel = ds => { const d=new Date(ds+'T00:00'); return d.toLocaleDateString('tr-TR',{weekday:'short',day:'numeric',month:'short'}); };
+
+      async function loadDetail() {
+        try { const data = await window.API.get(`/businesses/${id}`); state.business=data.business; state.date=todayPlus(0); render(); }
+        catch(e){ window.Toast.error(e.message); }
+      }
+      async function loadSlots() {
+        state.selectedTime = null;   // çalışan/tarih değişince seçimi sıfırla
+        if (!state.staff || !state.date) { state.slots=[]; render(); return; }
+        try { const d = await window.API.get(`/businesses/${id}/availability?staff_id=${state.staff.id}&date=${state.date}`); state.slots=d.slots||[]; render(); }
+        catch(e){ window.Toast.error(e.message); }
+      }
+      async function book() {
+        if (!state.service || !state.staff || !state.selectedTime) return;
+        const btn = document.getElementById('book-btn');
+        const o = btn.textContent; btn.disabled = true; btn.innerHTML = '<span class="spinner spinner-light"></span>';
+        try {
+          await window.API.post('/appointments', { business_id:state.business.id, staff_id:state.staff.id, service_id:state.service.id, service_name:state.service.name, date:state.date, time:state.selectedTime });
+          window.Toast.success('Randevu oluşturuldu!');
+          setTimeout(()=>location.href='/customer/my-appointments.html', 700);
+        } catch(e){ window.Toast.error(e.message); btn.disabled=false; btn.textContent=o; }
+      }
+
+      function pills(containerId, items, isActive, onClick, render2) {
+        const el = document.getElementById(containerId);
+        el.innerHTML = '';
+        items.forEach(it => { const c=document.createElement('button'); c.className='chip'+(isActive(it)?' active':''); c.innerHTML=render2(it); c.setAttribute('data-testid',it.testid||''); c.addEventListener('click',()=>onClick(it)); el.appendChild(c); });
+      }
+
+      function render() {
+        const b = state.business;
+        if (!b) { content.innerHTML='<p class="muted">İşletme bulunamadı.</p>'; return; }
+        content.innerHTML = `
+          <div class="card card-pad">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">
+              <h1 style="font-size:22px;font-weight:700;">${b.name}</h1>
+              <span class="badge badge-brand">${b.sector_label||b.sector}</span>
+            </div>
+            <div class="muted" style="font-size:13px;margin-top:4px;">${b.address||''}${b.location?' · '+b.location:''}</div>
+          </div>
+          <div class="card card-pad" style="margin-top:14px;">
+            <div style="font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);margin-bottom:8px;">Hizmet</div>
+            <div style="display:flex;gap:8px;overflow-x:auto;" id="services"></div>
+            <div style="font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);margin:16px 0 8px;">Çalışan</div>
+            <div style="display:flex;gap:8px;overflow-x:auto;" id="staff"></div>
+            <div style="font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);margin:16px 0 8px;">Tarih</div>
+            <div style="display:flex;gap:8px;overflow-x:auto;" id="dates"></div>
+            <div style="font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);margin:16px 0 8px;">Saat</div>
+            <div id="slots" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:8px;"></div>
+          </div>
+          <div class="card card-pad" style="margin-top:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;box-shadow:var(--shadow);">
+            <div style="font-size:13px;" id="book-summary"><span class="muted">Hizmet, çalışan, tarih ve saat seç.</span></div>
+            <button id="book-btn" class="btn btn-brand btn-lg" disabled data-testid="book-button" style="min-width:160px;">Randevu Al</button>
+          </div>`;
+
+        pills('services', (b.services||[]).map(s=>({...s,testid:`service-${s.id}`})), it=>state.service?.id===it.id, it=>{state.service=it;loadSlots();}, s=>`${s.name} <span style="opacity:.7;">${s.duration_minutes}dk</span>`);
+        pills('staff', (b.employees||[]).filter(e=>e.role==='staff'||e.role==='owner').map(e=>({...e,testid:`staff-${e.id}`})), it=>state.staff?.id===it.id, it=>{state.staff=it;loadSlots();}, e=>`${e.name}`);
+        pills('dates', Array.from({length:7},(_,i)=>{const d=todayPlus(i);return{id:d,label:dayLabel(d),testid:`date-${d}`};}), it=>state.date===it.id, it=>{state.date=it.id;loadSlots();}, d=>d.label);
+
+        const sl = document.getElementById('slots');
+        if (!state.slots.length) { sl.innerHTML = '<p class="muted" style="grid-column:1/-1;font-size:13px;">Önce hizmet ve çalışan seç.</p>'; updateBook(); return; }
+        sl.innerHTML = '';
+        state.slots.forEach(s => {
+          const btn = document.createElement('button');
+          btn.textContent = s.time; btn.setAttribute('data-testid',`slot-${s.time}`);
+          btn.className='chip'; btn.style.justifyContent='center';
+          if (s.status==='taken') { btn.disabled=true; btn.style.opacity='.45'; btn.style.cursor='not-allowed'; }
+          else {
+            if (state.selectedTime === s.time) btn.classList.add('active');
+            else { btn.style.borderColor='var(--brand)'; btn.style.color='var(--brand-strong)'; }
+            btn.addEventListener('click', () => { state.selectedTime = s.time; render(); });
+          }
+          sl.appendChild(btn);
+        });
+        updateBook();
+      }
+
+      function updateBook() {
+        const btn = document.getElementById('book-btn');
+        const sum = document.getElementById('book-summary');
+        if (!btn) return;
+        const ready = state.service && state.staff && state.date && state.selectedTime;
+        btn.disabled = !ready;
+        if (ready) {
+          sum.innerHTML = `<strong>${state.service.name}</strong> · ${state.staff.name} · <span class="tnum">${dayLabel(state.date)} ${state.selectedTime}</span>`;
+        } else {
+          const need = !state.service ? 'hizmet' : !state.staff ? 'çalışan' : !state.selectedTime ? 'saat' : 'tarih';
+          sum.innerHTML = `<span class="muted">Devam etmek için <strong>${need}</strong> seç.</span>`;
+        }
+      }
+
+      // Randevu Al butonu (event delegation — render her seferinde yeniden çiziyor)
+      content.addEventListener('click', (e) => { if (e.target.closest('#book-btn')) book(); });
+
+      loadDetail();
+    }
+  </script>
+</body>
+</html>
