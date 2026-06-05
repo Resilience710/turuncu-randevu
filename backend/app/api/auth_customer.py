@@ -112,11 +112,23 @@ async def request_otp(
         "phone_masked": pending.phone_masked,
         "gmail": gmail,
     }
-    if email_result.get("status") == "config_missing":
-        # E-posta yapılandırılmamış (dev/staging) — OTP kodu response'a düşer
+    email_status = email_result.get("status")
+
+    if email_status == "sent":
+        return response
+
+    # E-posta yapılandırılmamış (dev) VEYA gönderim başarısız ama prod değil:
+    # OTP kodunu response'a düşür ki dev'de akış kırılmasın.
+    if email_status == "config_missing" or not settings.is_production:
         response["status"] = "email_config_missing"
         response["dev_otp_code"] = code
-    return response
+        return response
+
+    # Production'da gerçek gönderim hatası → sessizce "gönderildi" deme, hata ver.
+    raise HTTPException(
+        status_code=502,
+        detail="Doğrulama e-postası şu an gönderilemedi. Lütfen birazdan tekrar deneyin.",
+    )
 
 
 @router.post("/verify-register", response_model=AuthResponse)

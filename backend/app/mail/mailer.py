@@ -1,10 +1,16 @@
-"""E-posta gönderimi (SMTP / Gmail).
+"""E-posta gönderimi (Brevo HTTP API + SMTP fallback).
 
 SMS'in yaptığı tüm işlerin (OTP doğrulama, randevu onayı, hatırlatma) yeni
-kanalı. Gmail App Password ile smtp.gmail.com:587 üzerinden STARTTLS.
+kanalı.
 
-Config eksikse (smtp_user/smtp_password boş) status='config_missing' döner —
-dev'de akış kırılmaz, OTP response'a düşer (ekranda gösterilir).
+İKİ YOL:
+  1) Brevo HTTP API (https://api.brevo.com/v3/smtp/email, port 443) — ÖNCELİK.
+     Render ücretsiz plan SMTP portlarını (25/465/587) engellediği için
+     production'da TEK çalışan yol budur. brevo_api_key doluysa bu kullanılır.
+  2) SMTP (smtp.gmail.com:587) — sadece lokal dev / paid plan fallback.
+
+Config (ikisi de) eksikse status='config_missing' döner — dev'de akış kırılmaz,
+OTP response'a düşer (ekranda gösterilir).
 
 NOT: Bu paket 'mail' adında; stdlib 'email' modülünü gölgelememesi için
 bilerek böyle adlandırıldı (içeride `from email.message import ...` çalışır).
@@ -20,9 +26,13 @@ from email.message import EmailMessage
 from email.utils import formataddr
 from typing import Any, Dict, Optional
 
+import requests
+
 from app.config import get_settings
 
 logger = logging.getLogger(__name__)
+
+BREVO_ENDPOINT = "https://api.brevo.com/v3/smtp/email"
 
 
 def _mask_email(addr: str) -> str:
@@ -61,26 +71,74 @@ def _send_sync(
             server.send_message(msg)
 
 
-async def send_email(
+def _brevo_sync(api_key: str, payload: Dict[str, Any]) -> requests.Response:
+    return requests.post(
+        BREVO_ENDPOINT,
+        json=payload,
+        headers={
+            "api-key": api_key,
+            "accept": "application/json",
+            "content-type": "application/json",
+        },
+        timeout=15,
+    )
+
+
+async def _send_via_brevo(
+    settings,
     to_email: str,
     subject: str,
     body_text: str,
-    body_html: Optional[str] = None,
-    purpose: str = "general",
+    body_html: Optional[str],
+    purpose: str,
 ) -> Dict[str, Any]:
-    """Tek bir e-posta gönderir.
-
-    Returns: {"sent": bool, "status": "sent"|"failed"|"config_missing"}
-    """
-    settings = get_settings()
-    user = settings.smtp_user.strip()
-    password = settings.smtp_password.strip()
-
-    if not user or not password:
-        logger.info("E-posta config eksik (purpose=%s) — gönderilmedi", purpose)
+    sender_email = settings.sender_email
+    if not sender_email:
+        logger.warning("Brevo: gönderen e-posta (SMTP_FROM_EMAIL) boş")
         return {"sent": False, "status": "config_missing"}
 
-    from_email = (settings.smtp_from_email or user).strip()
+    payload: Dict[str, Any] = {
+        "sender": {"name": settings.smtp_from_name, "email": sender_email},
+        "to": [{"email": to_email}],
+        "subject": subject,
+        "textContent": body_text,
+    }
+    if body_html:
+        payload["htmlContent"] = body_html
+
+    try:
+        resp = await asyncio.to_thread(_brevo_sync, settings.brevo_api_key, payload)
+        if resp.status_code in (200, 201, 202):
+            logger.info(
+                "E-posta gönderildi/Brevo (purpose=%s, to=%s)",
+                purpose,
+                _mask_email(to_email),
+            )
+            return {"sent": True, "status": "sent"}
+        logger.warning(
+            "Brevo hata (purpose=%s, http=%s): %s",
+            purpose,
+            resp.status_code,
+            resp.text[:300],
+        )
+        return {"sent": False, "status": "failed", "error": resp.text[:200]}
+    except Exception as exc:  # noqa: BLE001 — hatayı yut, akışı kırma
+        logger.warning("Brevo gönderim hatası (purpose=%s): %s", purpose, exc)
+        return {"sent": False, "status": "failed", "error": str(exc)}
+
+
+async def _send_via_smtp(
+    settings,
+    to_email: str,
+    subject: str,
+    body_text: str,
+    body_html: Optional[str],
+    purpose: str,
+) -> Dict[str, Any]:
+    user = settings.smtp_user.strip()
+    password = settings.smtp_password.strip()
+    from_email = settings.sender_email or user
+
     msg = EmailMessage()
     msg["Subject"] = subject
     msg["From"] = formataddr((settings.smtp_from_name, from_email))
@@ -100,12 +158,42 @@ async def send_email(
             msg,
         )
         logger.info(
-            "E-posta gönderildi (purpose=%s, to=%s)", purpose, _mask_email(to_email)
+            "E-posta gönderildi/SMTP (purpose=%s, to=%s)", purpose, _mask_email(to_email)
         )
         return {"sent": True, "status": "sent"}
     except Exception as exc:  # noqa: BLE001 — tüm SMTP hatalarını yut, akışı kırma
-        logger.warning("E-posta gönderilemedi (purpose=%s): %s", purpose, exc)
+        logger.warning("SMTP gönderilemedi (purpose=%s): %s", purpose, exc)
         return {"sent": False, "status": "failed", "error": str(exc)}
+
+
+async def send_email(
+    to_email: str,
+    subject: str,
+    body_text: str,
+    body_html: Optional[str] = None,
+    purpose: str = "general",
+) -> Dict[str, Any]:
+    """Tek bir e-posta gönderir.
+
+    Brevo HTTP API öncelikli (Render SMTP'yi engellediği için); yoksa SMTP
+    fallback (lokal dev). İkisi de yoksa config_missing.
+
+    Returns: {"sent": bool, "status": "sent"|"failed"|"config_missing"}
+    """
+    settings = get_settings()
+
+    if settings.brevo_api_key.strip():
+        return await _send_via_brevo(
+            settings, to_email, subject, body_text, body_html, purpose
+        )
+
+    if settings.smtp_user.strip() and settings.smtp_password.strip():
+        return await _send_via_smtp(
+            settings, to_email, subject, body_text, body_html, purpose
+        )
+
+    logger.info("E-posta config eksik (purpose=%s) — gönderilmedi", purpose)
+    return {"sent": False, "status": "config_missing"}
 
 
 # --- Şablonlar -------------------------------------------------------------

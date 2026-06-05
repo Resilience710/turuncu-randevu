@@ -28,7 +28,11 @@ services:
         value: INFO
       - key: STATIC_DIR
         value: /app/static
-      # --- E-posta / SMTP (Gmail) — OTP + bildirimler. Boşsa OTP ekrana düşer ---
+      # --- E-posta gönderimi — OTP + bildirimler ---
+      # Brevo HTTP API (production'da TEK çalışan yol; Render SMTP'yi engeller).
+      - key: BREVO_API_KEY
+        sync: false
+      # SMTP fallback (Render ücretsizde çalışmaz; lokal/paid için)
       - key: SMTP_HOST
         value: smtp.gmail.com
       - key: SMTP_PORT

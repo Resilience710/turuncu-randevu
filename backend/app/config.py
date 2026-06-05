@@ -32,10 +32,16 @@ class Settings(BaseSettings):
     otp_secret: str = Field(default="", description="OTP hash secret'ı")
     otp_ttl_seconds: int = Field(default=300, ge=60, le=3600)
 
-    # E-posta / SMTP (Gmail) — OTP doğrulama + randevu bildirimleri buradan gider.
-    # Gmail için: smtp.gmail.com:587, smtp_user = gmail adresin,
-    # smtp_password = Google App Password (16 hane). Boşsa OTP dev modunda
-    # response'a düşer (e-posta gönderilmez).
+    # --- E-posta gönderimi ---
+    # ÖNCELİK: brevo_api_key doluysa Brevo HTTP API (port 443) kullanılır.
+    # Bunun sebebi: Render ücretsiz plan giden SMTP portlarını (25/465/587)
+    # engelliyor → Gmail SMTP production'da çalışmaz. Brevo HTTPS üzerinden
+    # gönderir, engellenmez. Lokal dev'de brevo boşsa SMTP fallback devreye girer.
+    # Gönderen adresi her iki yolda da smtp_from_email/smtp_user'dan alınır.
+    brevo_api_key: str = ""
+
+    # SMTP (lokal dev / paid plan fallback). Gmail: smtp.gmail.com:587,
+    # smtp_password = Google App Password (16 hane).
     smtp_host: str = "smtp.gmail.com"
     smtp_port: int = 587
     smtp_user: str = ""          # gönderen gmail adresi
@@ -79,7 +85,11 @@ class Settings(BaseSettings):
 
     @property
     def email_configured(self) -> bool:
-        return bool(self.smtp_user and self.smtp_password)
+        return bool(self.brevo_api_key or (self.smtp_user and self.smtp_password))
+
+    @property
+    def sender_email(self) -> str:
+        return (self.smtp_from_email or self.smtp_user or "").strip()
 
 
 @lru_cache(maxsize=1)
