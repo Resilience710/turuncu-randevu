@@ -25,6 +25,8 @@ class SmsReminder(Base):
     phone_encrypted: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
     phone_hash: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
     phone_masked: Mapped[str] = mapped_column(String(30), nullable=False)
+    # Hatırlatma artık e-posta ile gider; alıcı e-postası burada tutulur.
+    recipient_email: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     message: Mapped[str] = mapped_column(Text, nullable=False)
     send_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     status: Mapped[str] = mapped_column(String(20), default="pending", nullable=False)

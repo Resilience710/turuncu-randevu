@@ -29,7 +29,7 @@ from app.security.phones import (
     phone_hash,
 )
 from app.security.tokens import new_session_token
-from app.sms.vatansms import send_sms
+from app.mail.mailer import build_otp_email, send_email
 
 router = APIRouter(prefix="/auth/customer", tags=["auth"])
 
@@ -96,11 +96,13 @@ async def request_otp(
     db.add(pending)
     await db.flush()
 
-    sms_result = await send_sms(
-        db,
-        normalized,
-        f"Turuncu Randevu doğrulama kodunuz: {code}. "
-        f"Kod {settings.otp_ttl_seconds // 60} dakika geçerlidir.",
+    ttl_minutes = settings.otp_ttl_seconds // 60
+    otp_text, otp_html = build_otp_email(code, ttl_minutes)
+    email_result = await send_email(
+        gmail,
+        "Turuncu Randevu doğrulama kodu",
+        otp_text,
+        otp_html,
         "otp",
     )
 
@@ -108,10 +110,11 @@ async def request_otp(
         "status": "otp_sent",
         "expires_in_seconds": settings.otp_ttl_seconds,
         "phone_masked": pending.phone_masked,
+        "gmail": gmail,
     }
-    if sms_result.get("status") == "config_missing":
-        # Dev/staging için OTP kodu response'a düşer
-        response["status"] = "sms_config_missing"
+    if email_result.get("status") == "config_missing":
+        # E-posta yapılandırılmamış (dev/staging) — OTP kodu response'a düşer
+        response["status"] = "email_config_missing"
         response["dev_otp_code"] = code
     return response
 

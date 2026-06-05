@@ -68,7 +68,7 @@
       <!-- Adım 1 -->
       <div id="step-1" data-testid="register-step-1">
         <h2 style="font-size:23px;font-weight:700;">Hesap aç</h2>
-        <p class="muted" style="font-size:14px;margin:4px 0 22px;">Telefonuna SMS ile kod gelecek.</p>
+        <p class="muted" style="font-size:14px;margin:4px 0 22px;">Gmail adresine doğrulama kodu göndereceğiz.</p>
         <form id="form-1" novalidate>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
             <div class="field" style="margin:0;"><label class="field-label" for="first_name">Ad</label><input class="input" id="first_name" required maxlength="100" autocomplete="given-name" data-testid="input-first-name" /></div>
@@ -90,10 +90,11 @@
 
       <!-- Adım 2 -->
       <div id="step-2" data-testid="register-step-2" style="display:none;">
-        <h2 style="font-size:23px;font-weight:700;">SMS'i doğrula</h2>
-        <p class="muted" style="font-size:14px;margin:4px 0 14px;"><strong id="masked-phone" style="color:var(--text);">numaran</strong> üzerine 6 haneli kod gönderildi.</p>
+        <h2 style="font-size:23px;font-weight:700;">E-postanı doğrula</h2>
+        <p class="muted" style="font-size:14px;margin:4px 0 6px;"><strong id="masked-phone" style="color:var(--text);">e-postan</strong> adresine 6 haneli kod gönderildi.</p>
+        <p class="muted" style="font-size:12px;margin:0 0 14px;">Gelen kutusunda yoksa <strong>Spam / Gereksiz</strong> klasörüne de bak.</p>
         <div id="dev-otp" data-testid="dev-otp" style="display:none;margin-bottom:16px;padding:12px 14px;border-radius:10px;background:var(--brand-subtle);border:1px solid var(--brand);">
-          <div style="font-size:12px;font-weight:600;color:var(--brand-strong);">Geliştirme modu — SMS gönderilmiyor</div>
+          <div style="font-size:12px;font-weight:600;color:var(--brand-strong);">Geliştirme modu — e-posta gönderilmiyor</div>
           <div style="font-size:13px;color:var(--text-2);margin-top:2px;">Aşağıdaki alana şu kodu yaz: <strong id="dev-otp-code" style="font-size:18px;letter-spacing:3px;color:var(--brand-strong);"></strong></div>
         </div>
         <form id="form-2" novalidate>
@@ -145,7 +146,7 @@
         kvkk_accepted:true,
       });
       pPhone=document.getElementById('phone').value.trim(); pGmail=document.getElementById('gmail').value.trim();
-      document.getElementById('masked-phone').textContent=r.phone_masked||'telefonun';
+      document.getElementById('masked-phone').textContent=r.gmail||pGmail||'e-postan';
       if(r.dev_otp_code){ document.getElementById('dev-otp-code').textContent=r.dev_otp_code; document.getElementById('dev-otp').style.display='block'; }
       setStep(2); setTimeout(()=>document.getElementById('otp_code').focus(),150);
     }catch(err){showErr(e1,err.message||'Bir şeyler ters gitti.');}

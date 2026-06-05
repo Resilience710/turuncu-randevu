@@ -28,7 +28,22 @@ services:
         value: INFO
       - key: STATIC_DIR
         value: /app/static
-      # --- VatanSMS (şimdilik boş; OTP ekrana düşer) ---
+      # --- E-posta / SMTP (Gmail) — OTP + bildirimler. Boşsa OTP ekrana düşer ---
+      - key: SMTP_HOST
+        value: smtp.gmail.com
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: SMTP_FROM_EMAIL
+        sync: false
+      - key: SMTP_FROM_NAME
+        value: Turuncu Randevu
+      - key: SMTP_USE_TLS
+        value: "true"
+      # --- VatanSMS (PASİF — kod kenarda, çağrılmıyor) ---
       - key: VATANSMS_API_ID
         sync: false
       - key: VATANSMS_API_KEY

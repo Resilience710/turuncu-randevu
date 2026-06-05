@@ -32,7 +32,21 @@ class Settings(BaseSettings):
     otp_secret: str = Field(default="", description="OTP hash secret'ı")
     otp_ttl_seconds: int = Field(default=300, ge=60, le=3600)
 
-    # VatanSMS (REST API v1) — https://api.vatansms.net/api/v1/1toN
+    # E-posta / SMTP (Gmail) — OTP doğrulama + randevu bildirimleri buradan gider.
+    # Gmail için: smtp.gmail.com:587, smtp_user = gmail adresin,
+    # smtp_password = Google App Password (16 hane). Boşsa OTP dev modunda
+    # response'a düşer (e-posta gönderilmez).
+    smtp_host: str = "smtp.gmail.com"
+    smtp_port: int = 587
+    smtp_user: str = ""          # gönderen gmail adresi
+    smtp_password: str = ""      # Gmail App Password (boşluksuz 16 hane)
+    smtp_from_email: str = ""    # boşsa smtp_user kullanılır
+    smtp_from_name: str = "Turuncu Randevu"
+    smtp_use_tls: bool = True    # 587/STARTTLS. SSL (465) için False yap.
+
+    # VatanSMS (REST API v1) — ŞU AN PASİF. Kod kenarda duruyor; çağrılmıyor.
+    # Tekrar SMS'e dönülmek istenirse bu değerler doldurulup ilgili import'lar
+    # app.sms.vatansms'e geri çevrilir.
     vatansms_api_id: str = ""
     vatansms_api_key: str = ""
     vatansms_sender: str = ""  # bireysel: 0850'li abone numarası, kurumsal: onaylı başlık
@@ -62,6 +76,10 @@ class Settings(BaseSettings):
     @property
     def is_production(self) -> bool:
         return self.app_env.lower() in ("production", "prod")
+
+    @property
+    def email_configured(self) -> bool:
+        return bool(self.smtp_user and self.smtp_password)
 
 
 @lru_cache(maxsize=1)

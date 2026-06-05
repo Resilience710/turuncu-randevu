@@ -33,7 +33,7 @@ from app.security.phones import (
     normalize_phone,
 )
 from app.services.slots import make_slots
-from app.sms.vatansms import send_sms
+from app.mail.mailer import build_confirm_email, send_email
 
 router = APIRouter(tags=["appointments"])
 
@@ -89,6 +89,7 @@ async def create_appointment(
 
         cust = await db.scalar(select(CustomerUser).where(CustomerUser.id == customer_id))
         customer_phone = decrypt_phone(cust.phone_encrypted) if cust else ""
+        customer_email = cust.gmail if cust else None
         source = "customer"
     else:
         if principal.get("business_id") != payload.business_id:
@@ -97,6 +98,7 @@ async def create_appointment(
         customer_id = None
         customer_name = payload.customer_name or "Telefon müşterisi"
         customer_phone = payload.customer_phone or ""
+        customer_email = None  # manuel/telefon müşterisinin e-postası yok
         source = payload.source or "manual"
         if source == "customer":
             source = "manual"  # staff oluşturduysa override
@@ -168,25 +170,33 @@ async def create_appointment(
         )
     )
 
-    # SMS onayı (varsa telefon)
-    if customer_phone:
-        await send_sms(
-            db,
-            customer_phone,
-            f"Turuncu Randevu: {business.name} için "
-            f"{payload.date.isoformat()} {payload.time} randevunuz onaylandı.",
+    # E-posta onayı + hatırlatma (yalnız e-postası olan kayıtlı müşteriler).
+    # Manuel/telefon müşterisinin e-postası yoktur → bildirim atlanır.
+    if customer_email:
+        confirm_text, confirm_html = build_confirm_email(
+            business.name, payload.date.isoformat(), payload.time, appt.service_name
+        )
+        await send_email(
+            customer_email,
+            f"Randevunuz onaylandı — {business.name}",
+            confirm_text,
+            confirm_html,
             "appointment_confirm",
         )
-        # 15 dk öncesi hatırlatma için kuyruğa ekle (Faz 6 worker'ı tüketir)
-        await _schedule_reminder(db, appt, customer_phone)
+        # 15 dk öncesi hatırlatma için kuyruğa ekle (reminder_worker tüketir)
+        await _schedule_reminder(db, appt, customer_email, customer_phone)
 
     return {"appointment": _appt_public(appt)}
 
 
 async def _schedule_reminder(
-    db: AsyncSession, appt: Appointment, phone: str
+    db: AsyncSession, appt: Appointment, recipient_email: str, phone: str
 ) -> None:
-    """SMS hatırlatma satırını sms_reminders'a ekler (Faz 6 worker tüketir)."""
+    """Hatırlatma satırını sms_reminders kuyruğuna ekler (reminder_worker tüketir).
+
+    Bildirim artık e-posta ile gider; phone alanları kayıt/uyumluluk için
+    saklanır (telefon yoksa boş şifrelenir).
+    """
     from datetime import timedelta
 
     from app.models.sms_reminder import SmsReminder
@@ -195,16 +205,18 @@ async def _schedule_reminder(
     appt_dt = datetime.combine(appt.date, appt.time, tzinfo=timezone.utc)
     send_at = appt_dt - timedelta(minutes=15)
     status = "pending" if send_at > datetime.now(timezone.utc) else "due"
+    safe_phone = phone or ""
     db.add(
         SmsReminder(
             id=uuid.uuid4(),
             appointment_id=appt.id,
-            phone_encrypted=encrypt_phone(phone),
-            phone_hash=phone_hash(phone),
-            phone_masked=mask_phone(phone),
+            phone_encrypted=encrypt_phone(safe_phone),
+            phone_hash=phone_hash(safe_phone),
+            phone_masked=mask_phone(safe_phone) if safe_phone else "—",
+            recipient_email=recipient_email,
             message=(
-                f"Turuncu Randevu hatırlatma: {appt.service_name} randevunuz "
-                f"15 dakika sonra ({appt.time.strftime('%H:%M')})."
+                f"{appt.service_name} randevunuz 15 dakika sonra "
+                f"({appt.time.strftime('%H:%M')}). İyi günler — Turuncu Randevu"
             ),
             send_at=send_at,
             status=status,
