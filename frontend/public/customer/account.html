@@ -44,6 +44,11 @@
         </div>
       </div>
 
+      <div class="card card-pad" id="install-card" style="margin-top:16px;display:none;align-items:center;justify-content:space-between;">
+        <div><div style="font-weight:600;">Uygulamayı yükle</div><div class="muted" style="font-size:13px;">Ana ekranına ekle, tek dokunuşla aç</div></div>
+        <button class="btn btn-brand btn-sm" id="install-btn" data-testid="install-app">Yükle</button>
+      </div>
+
       <button class="btn btn-danger btn-block" style="margin-top:16px;" onclick="window.Auth.logout()" data-testid="logout-button">Çıkış yap</button>
     </div>
   </main>
@@ -67,6 +72,14 @@
       paint();
       document.getElementById('theme-light').addEventListener('click',()=>{window.Theme.set('light');paint();});
       document.getElementById('theme-dark').addEventListener('click',()=>{window.Theme.set('dark');paint();});
+
+      // Uygulamayı yükle kartı — sadece yüklü değilse göster
+      (function(){
+        var st=(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||window.navigator.standalone===true;
+        if(st) return;
+        var card=document.getElementById('install-card'); card.style.display='flex';
+        document.getElementById('install-btn').onclick=function(){ if(window.PWAInstall){window.PWAInstall.show();}else{window.Toast&&window.Toast.info&&window.Toast.info('Tarayıcı menüsünden “Ana ekrana ekle”yi kullan.');} };
+      })();
     }
   </script>
 <script src="/js/shared/pwa-install.js"></script>
