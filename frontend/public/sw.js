@@ -1,5 +1,5 @@
 // Turuncu Randevu — service worker (network-first + offline fallback).
-const CACHE_NAME = 'turuncu-randevu-v6';
+const CACHE_NAME = 'turuncu-randevu-v7';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -18,6 +18,7 @@ const APP_SHELL = [
   '/js/shared/topnav.js',
   '/js/shared/datepicker.js',
   '/js/shared/confirm-modal.js',
+  '/js/shared/pwa-install.js',
 ];
 
 self.addEventListener('install', (event) => {
