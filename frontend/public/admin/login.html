@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#0F172A" />
+  <title>Admin Girişi — Turuncu Randevu</title>
+  <meta name="robots" content="noindex,nofollow" />
+  <link rel="icon" type="image/svg+xml" href="/icons/pwa-icon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script>(function(){var t=localStorage.getItem('turuncu-theme')||'dark';document.documentElement.classList.toggle('dark',t==='dark');})();</script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="/js/shared/tailwind-config.js"></script>
+  <link rel="stylesheet" href="/css/theme.css" />
+</head>
+<body style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:var(--bg);">
+  <div class="card card-pad" style="width:100%;max-width:400px;">
+    <div style="display:flex;align-items:center;gap:11px;margin-bottom:6px;">
+      <span style="width:40px;height:40px;border-radius:11px;background:var(--brand);display:flex;align-items:center;justify-content:center;">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/></svg>
+      </span>
+      <div><strong style="font-size:17px;">Turuncu Randevu</strong><div class="muted" style="font-size:12px;">Yönetim Paneli</div></div>
+    </div>
+    <h2 style="font-size:20px;font-weight:700;margin:14px 0 2px;">Admin girişi</h2>
+    <p class="muted" style="font-size:13px;margin-bottom:18px;">Yalnızca site yöneticisi.</p>
+    <form id="form" novalidate>
+      <div class="field"><label class="field-label" for="email">E-posta</label><input class="input" id="email" type="email" required autocomplete="username" data-testid="admin-email" /></div>
+      <div class="field"><label class="field-label" for="password">Şifre</label><input class="input" id="password" type="password" required autocomplete="current-password" data-testid="admin-password" /></div>
+      <div id="err" class="field-error" role="alert" style="display:none;margin-top:10px;"></div>
+      <button type="submit" class="btn btn-brand btn-block btn-lg" style="margin-top:16px;" data-testid="admin-login">Giriş yap</button>
+    </form>
+  </div>
+
+  <script>
+    (function(){
+      var TOKEN_KEY='turuncu-admin-token';
+      if(localStorage.getItem(TOKEN_KEY)) location.replace('/admin/panel.html');
+      var form=document.getElementById('form'), err=document.getElementById('err');
+      function showErr(m){err.textContent=m;err.style.display='block';}
+      form.addEventListener('submit', async function(e){
+        e.preventDefault(); err.style.display='none';
+        var b=form.querySelector('button'); var o=b.textContent; b.disabled=true; b.innerHTML='<span class="spinner spinner-light"></span>';
+        try{
+          var res=await fetch('/api/admin/login',{method:'POST',headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({email:document.getElementById('email').value.trim(),password:document.getElementById('password').value})});
+          var data=await res.json().catch(function(){return {};});
+          if(!res.ok) throw new Error(data.detail||'Giriş başarısız');
+          localStorage.setItem(TOKEN_KEY,data.token);
+          location.replace('/admin/panel.html');
+        }catch(ex){ showErr(ex.message||'Giriş başarısız'); b.disabled=false; b.textContent=o; }
+      });
+    })();
+  </script>
+</body>
+</html>

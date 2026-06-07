@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#0F172A" />
+  <title>Yönetim Paneli — Turuncu Randevu</title>
+  <meta name="robots" content="noindex,nofollow" />
+  <link rel="icon" type="image/svg+xml" href="/icons/pwa-icon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script>(function(){var t=localStorage.getItem('turuncu-theme')||'dark';document.documentElement.classList.toggle('dark',t==='dark');})();</script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="/js/shared/tailwind-config.js"></script>
+  <link rel="stylesheet" href="/css/theme.css" />
+  <style>
+    .adm-bar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:14px;padding:12px 18px;
+      background:var(--sidebar);color:#fff;border-bottom:1px solid rgba(255,255,255,.08);}
+    .adm-tabs{display:flex;gap:6px;flex-wrap:wrap;padding:14px 18px 0;max-width:1100px;margin:0 auto;}
+    .adm-tab{padding:9px 16px;border-radius:10px 10px 0 0;font-size:14px;font-weight:600;cursor:pointer;
+      color:var(--muted);background:transparent;border:none;font-family:inherit;}
+    .adm-tab.active{color:var(--brand-strong);background:var(--surface);}
+    .adm-wrap{max-width:1100px;margin:0 auto;padding:18px;}
+    .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;}
+    .kpi{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 18px;}
+    .kpi .v{font-size:30px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums;}
+    .kpi .l{font-size:13px;color:var(--muted);margin-top:6px;}
+    table.adm{width:100%;border-collapse:collapse;font-size:13.5px;}
+    table.adm th{text-align:left;color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;
+      letter-spacing:.04em;padding:10px 12px;border-bottom:1px solid var(--border);}
+    table.adm td{padding:11px 12px;border-bottom:1px solid var(--border);vertical-align:middle;}
+    table.adm tr:hover td{background:var(--surface-2);}
+    .tbl-scroll{overflow-x:auto;}
+    .modal-bg{position:fixed;inset:0;background:rgba(2,6,23,.6);display:none;align-items:center;justify-content:center;z-index:60;padding:16px;}
+    .modal-bg.open{display:flex;}
+    .modal-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:22px;max-width:440px;width:100%;}
+  </style>
+</head>
+<body style="background:var(--bg);min-height:100vh;">
+  <div class="adm-bar">
+    <span style="width:32px;height:32px;border-radius:9px;background:var(--brand);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/></svg>
+    </span>
+    <strong style="font-size:15px;">Yönetim Paneli</strong>
+    <span class="muted" id="adm-email" style="font-size:12px;"></span>
+    <button class="btn btn-sm" id="logout" style="margin-left:auto;">Çıkış</button>
+  </div>
+
+  <div class="adm-tabs">
+    <button class="adm-tab active" data-tab="genel">Genel</button>
+    <button class="adm-tab" data-tab="sektorler">Sektörler</button>
+    <button class="adm-tab" data-tab="isletmeler">İşletmeler</button>
+    <button class="adm-tab" data-tab="musteriler">Müşteriler</button>
+  </div>
+
+  <div class="adm-wrap"><div id="content"><div class="muted" style="padding:30px;text-align:center;">Yükleniyor…</div></div></div>
+
+  <!-- Sektör ekle/düzenle modal -->
+  <div class="modal-bg" id="sector-modal">
+    <div class="modal-card">
+      <h3 id="sm-title" style="font-size:18px;font-weight:700;margin:0 0 14px;">Yeni sektör</h3>
+      <div class="field"><label class="field-label" for="sm-id">Kimlik (id)</label><input class="input" id="sm-id" placeholder="kuafor" /><span class="field-hint">Küçük harf, boşluksuz. Sonradan değişmez.</span></div>
+      <div class="field"><label class="field-label" for="sm-label">Görünen ad</label><input class="input" id="sm-label" placeholder="Kuaför" /></div>
+      <div class="field"><label class="field-label" for="sm-services">Varsayılan hizmetler</label><textarea class="input" id="sm-services" rows="3" placeholder="Saç Kesimi, Fön, Boya"></textarea><span class="field-hint">Virgülle ayır.</span></div>
+      <label style="display:flex;align-items:center;gap:8px;font-size:14px;margin-top:6px;"><input type="checkbox" id="sm-active" checked style="width:16px;height:16px;accent-color:var(--brand);" /> Aktif (kayıt formunda görünür)</label>
+      <div id="sm-err" class="field-error" style="display:none;margin-top:10px;"></div>
+      <div style="display:flex;gap:10px;margin-top:18px;">
+        <button class="btn btn-soft btn-block" id="sm-cancel">İptal</button>
+        <button class="btn btn-brand btn-block" id="sm-save">Kaydet</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/shared/theme.js"></script>
+  <script src="/js/shared/toast.js"></script>
+  <script src="/js/shared/confirm-modal.js"></script>
+  <script>
+  (function(){
+    var TOKEN_KEY='turuncu-admin-token';
+    var token=localStorage.getItem(TOKEN_KEY);
+    if(!token){ location.replace('/admin/login.html'); return; }
+
+    function logout(){ localStorage.removeItem(TOKEN_KEY); location.replace('/admin/login.html'); }
+    document.getElementById('logout').onclick=logout;
+
+    async function api(path, opts){
+      opts=opts||{};
+      opts.headers=Object.assign({'Content-Type':'application/json','Authorization':'Bearer '+token}, opts.headers||{});
+      var res=await fetch('/api/admin'+path, opts);
+      if(res.status===401){ logout(); throw new Error('Oturum sona erdi'); }
+      var data=await res.json().catch(function(){return {};});
+      if(!res.ok) throw new Error(data.detail||'Bir hata oluştu');
+      return data;
+    }
+
+    var esc=function(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); };
+    var content=document.getElementById('content');
+    var fmtDate=function(iso){ if(!iso) return '—'; try{var d=new Date(iso);return d.toLocaleDateString('tr-TR')+' '+d.toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'});}catch(e){return '—';} };
+
+    // ---- Genel ----
+    async function renderGenel(){
+      content.innerHTML='<div class="muted" style="padding:20px;">Yükleniyor…</div>';
+      var s=await api('/stats');
+      function k(v,l){return '<div class="kpi"><div class="v">'+v+'</div><div class="l">'+l+'</div></div>';}
+      content.innerHTML='<div class="kpi-grid">'+
+        k(s.businesses,'İşletme')+k(s.owners,'İşletme sahibi')+k(s.staff,'Personel')+
+        k(s.customers,'Müşteri')+k(s.appointments,'Randevu')+k(s.sectors,'Sektör')+'</div>';
+    }
+
+    // ---- Sektörler ----
+    var editingSector=null;
+    async function renderSektorler(){
+      content.innerHTML='<div class="muted" style="padding:20px;">Yükleniyor…</div>';
+      var d=await api('/sectors'); var rows=d.sectors;
+      var html='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">'+
+        '<h2 style="font-size:18px;font-weight:700;">Sektörler ('+rows.length+')</h2>'+
+        '<button class="btn btn-brand btn-sm" id="add-sector">+ Yeni sektör</button></div>';
+      html+='<div class="card tbl-scroll"><table class="adm"><thead><tr><th>Ad</th><th>Kimlik</th><th>Hizmetler</th><th>Durum</th><th></th></tr></thead><tbody>';
+      rows.forEach(function(s){
+        html+='<tr><td style="font-weight:600;">'+esc(s.label)+'</td><td class="muted">'+esc(s.id)+'</td>'+
+          '<td class="muted">'+esc((s.services||[]).join(', ')||'—')+'</td>'+
+          '<td>'+(s.is_active?'<span class="badge badge-success">Aktif</span>':'<span class="badge">Pasif</span>')+'</td>'+
+          '<td style="text-align:right;white-space:nowrap;">'+
+            '<button class="btn btn-sm" data-edit="'+esc(s.id)+'">Düzenle</button> '+
+            '<button class="btn btn-sm" data-toggle="'+esc(s.id)+'" data-active="'+(s.is_active?1:0)+'">'+(s.is_active?'Pasifle':'Aktifle')+'</button> '+
+            '<button class="btn btn-sm btn-danger" data-del="'+esc(s.id)+'">Sil</button>'+
+          '</td></tr>';
+      });
+      html+='</tbody></table></div>';
+      content.innerHTML=html;
+      window.__sectors=rows;
+      document.getElementById('add-sector').onclick=function(){ openSectorModal(null); };
+      content.querySelectorAll('[data-edit]').forEach(function(b){ b.onclick=function(){ openSectorModal(rows.find(function(x){return x.id===b.getAttribute('data-edit');})); }; });
+      content.querySelectorAll('[data-toggle]').forEach(function(b){ b.onclick=async function(){
+        try{ await api('/sectors/'+encodeURIComponent(b.getAttribute('data-toggle')),{method:'PATCH',body:JSON.stringify({is_active:b.getAttribute('data-active')!=='1'})}); renderSektorler(); }catch(e){ window.Toast.error(e.message); }
+      };});
+      content.querySelectorAll('[data-del]').forEach(function(b){ b.onclick=async function(){
+        var id=b.getAttribute('data-del');
+        var ok=await window.confirmModal({title:'Sektörü sil',message:'“'+id+'” sektörü silinsin mi?',danger:true,confirmText:'Sil'});
+        if(!ok) return;
+        try{ await api('/sectors/'+encodeURIComponent(id),{method:'DELETE'}); window.Toast.success('Silindi'); renderSektorler(); }catch(e){ window.Toast.error(e.message); }
+      };});
+    }
+
+    var sm=document.getElementById('sector-modal');
+    function openSectorModal(s){
+      editingSector=s;
+      document.getElementById('sm-title').textContent=s?'Sektörü düzenle':'Yeni sektör';
+      document.getElementById('sm-id').value=s?s.id:''; document.getElementById('sm-id').disabled=!!s;
+      document.getElementById('sm-label').value=s?s.label:'';
+      document.getElementById('sm-services').value=s?(s.services||[]).join(', '):'';
+      document.getElementById('sm-active').checked=s?s.is_active:true;
+      document.getElementById('sm-err').style.display='none';
+      sm.classList.add('open');
+    }
+    document.getElementById('sm-cancel').onclick=function(){ sm.classList.remove('open'); };
+    sm.onclick=function(e){ if(e.target===sm) sm.classList.remove('open'); };
+    document.getElementById('sm-save').onclick=async function(){
+      var err=document.getElementById('sm-err');
+      var id=document.getElementById('sm-id').value.trim().toLowerCase();
+      var label=document.getElementById('sm-label').value.trim();
+      var services=document.getElementById('sm-services').value.split(/[,\n]/).map(function(x){return x.trim();}).filter(Boolean);
+      var active=document.getElementById('sm-active').checked;
+      if(!label){ err.textContent='Görünen ad gerekli'; err.style.display='block'; return; }
+      try{
+        if(editingSector){
+          await api('/sectors/'+encodeURIComponent(editingSector.id),{method:'PATCH',body:JSON.stringify({label:label,services:services,is_active:active})});
+        }else{
+          if(!id || id.length<2){ err.textContent='Geçerli bir kimlik gir'; err.style.display='block'; return; }
+          await api('/sectors',{method:'POST',body:JSON.stringify({id:id,label:label,services:services,is_active:active})});
+        }
+        sm.classList.remove('open'); window.Toast.success('Kaydedildi'); renderSektorler();
+      }catch(e){ err.textContent=e.message; err.style.display='block'; }
+    };
+
+    // ---- İşletmeler ----
+    async function renderIsletmeler(){
+      content.innerHTML='<div class="muted" style="padding:20px;">Yükleniyor…</div>';
+      var d=await api('/businesses'); var rows=d.businesses;
+      var html='<h2 style="font-size:18px;font-weight:700;margin-bottom:14px;">İşletmeler ('+rows.length+')</h2>';
+      if(!rows.length){ content.innerHTML=html+'<div class="card card-pad muted" style="text-align:center;">Henüz işletme yok.</div>'; return; }
+      html+='<div class="card tbl-scroll"><table class="adm"><thead><tr><th>İşletme</th><th>Sektör</th><th>Sahip</th><th>Konum</th><th>Davet</th><th>Personel</th><th>Randevu</th><th>Kayıt</th><th></th></tr></thead><tbody>';
+      rows.forEach(function(b){
+        html+='<tr><td style="font-weight:600;">'+esc(b.name)+'</td><td>'+esc(b.sector)+'</td>'+
+          '<td class="muted">'+esc(b.owner_gmail||'—')+'</td><td class="muted">'+esc(b.location||'—')+'</td>'+
+          '<td style="letter-spacing:1px;font-weight:600;">'+esc(b.invite_code)+'</td>'+
+          '<td>'+b.staff_count+'</td><td>'+b.appointment_count+'</td>'+
+          '<td class="muted" style="white-space:nowrap;">'+fmtDate(b.created_at)+'</td>'+
+          '<td style="text-align:right;"><button class="btn btn-sm btn-danger" data-del="'+esc(b.id)+'" data-name="'+esc(b.name)+'">Sil</button></td></tr>';
+      });
+      html+='</tbody></table></div>';
+      content.innerHTML=html;
+      content.querySelectorAll('[data-del]').forEach(function(btn){ btn.onclick=async function(){
+        var ok=await window.confirmModal({title:'İşletmeyi sil',message:'“'+btn.getAttribute('data-name')+'” ve tüm personeli, hizmetleri, randevuları kalıcı silinecek. Emin misin?',danger:true,confirmText:'Kalıcı sil'});
+        if(!ok) return;
+        try{ await api('/businesses/'+btn.getAttribute('data-del'),{method:'DELETE'}); window.Toast.success('İşletme silindi'); renderIsletmeler(); }catch(e){ window.Toast.error(e.message); }
+      };});
+    }
+
+    // ---- Müşteriler ----
+    async function renderMusteriler(){
+      content.innerHTML='<div class="muted" style="padding:20px;">Yükleniyor…</div>';
+      var d=await api('/customers'); var rows=d.customers;
+      var html='<h2 style="font-size:18px;font-weight:700;margin-bottom:14px;">Müşteriler ('+rows.length+')</h2>';
+      if(!rows.length){ content.innerHTML=html+'<div class="card card-pad muted" style="text-align:center;">Henüz müşteri yok.</div>'; return; }
+      html+='<div class="card tbl-scroll"><table class="adm"><thead><tr><th>Ad Soyad</th><th>Telefon</th><th>Gmail</th><th>Kayıt</th><th></th></tr></thead><tbody>';
+      rows.forEach(function(u){
+        html+='<tr><td style="font-weight:600;">'+esc(u.name)+'</td><td class="muted">'+esc(u.phone_masked||'—')+'</td>'+
+          '<td class="muted">'+esc(u.gmail||'—')+'</td><td class="muted" style="white-space:nowrap;">'+fmtDate(u.created_at)+'</td>'+
+          '<td style="text-align:right;"><button class="btn btn-sm btn-danger" data-del="'+esc(u.id)+'" data-name="'+esc(u.name)+'">Sil</button></td></tr>';
+      });
+      html+='</tbody></table></div>';
+      content.innerHTML=html;
+      content.querySelectorAll('[data-del]').forEach(function(btn){ btn.onclick=async function(){
+        var ok=await window.confirmModal({title:'Müşteriyi sil',message:'“'+btn.getAttribute('data-name')+'” silinsin mi?',danger:true,confirmText:'Sil'});
+        if(!ok) return;
+        try{ await api('/customers/'+btn.getAttribute('data-del'),{method:'DELETE'}); window.Toast.success('Müşteri silindi'); renderMusteriler(); }catch(e){ window.Toast.error(e.message); }
+      };});
+    }
+
+    var renderers={genel:renderGenel,sektorler:renderSektorler,isletmeler:renderIsletmeler,musteriler:renderMusteriler};
+    function go(tab){
+      document.querySelectorAll('.adm-tab').forEach(function(t){ t.classList.toggle('active',t.getAttribute('data-tab')===tab); });
+      (renderers[tab]||renderGenel)().catch(function(e){ content.innerHTML='<div class="card card-pad" style="color:var(--danger);">'+esc(e.message)+'</div>'; });
+    }
+    document.querySelectorAll('.adm-tab').forEach(function(t){ t.onclick=function(){ go(t.getAttribute('data-tab')); }; });
+
+    // E-posta göster (login response'undan saklanmadıysa stats'tan değil; basitçe gizli)
+    go('genel');
+  })();
+  </script>
+</body>
+</html>

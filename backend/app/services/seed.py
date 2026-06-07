@@ -176,11 +176,19 @@ Bu metin genel bir bilgilendirme şablonudur. İşletmenizin gerçek unvanı, ad
 
 
 async def run_seed() -> None:
-    """Uygulama başlatıldığında idempotent şekilde başlangıç verilerini ekler."""
+    """Uygulama başlatıldığında idempotent şekilde başlangıç verilerini ekler.
+
+    Sektörler her ortamda eklenir. Demo işletme (TEST123) SADECE production
+    DIŞINDA eklenir — production'da gerçek veri kullanılır, test verisi geri
+    gelmesin diye.
+    """
+    from app.config import get_settings
+
     async with AsyncSessionLocal() as db:
         try:
             await _seed_sectors(db)
-            await _seed_demo_tenant(db)
+            if not get_settings().is_production:
+                await _seed_demo_tenant(db)
             await db.commit()
         except Exception:
             await db.rollback()

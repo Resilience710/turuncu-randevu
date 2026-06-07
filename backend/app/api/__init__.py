@@ -5,6 +5,7 @@ from __future__ import annotations
 from fastapi import APIRouter
 
 from app.api import (
+    admin,
     appointments,
     auth_customer,
     auth_owner,
@@ -28,6 +29,7 @@ api_router.include_router(employees.router)
 api_router.include_router(stations.router)
 api_router.include_router(availability.router)
 api_router.include_router(appointments.router)
+api_router.include_router(admin.router)
 
 
 @api_router.get("/")

@@ -101,6 +101,26 @@ async def set_rls_context(
     )
 
 
+async def require_admin(
+    authorization: Optional[str] = Header(None),
+) -> Dict[str, Any]:
+    """Admin paneli koruması — imzalı admin token doğrular (DB'siz)."""
+    from app.security.admin_token import verify_admin_token
+
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Admin oturumu gerekli")
+    token = authorization.replace("Bearer ", "", 1).strip()
+    if not verify_admin_token(token):
+        raise HTTPException(status_code=401, detail="Geçersiz veya süresi dolmuş admin oturumu")
+    return {"role": "admin", "principal_type": "admin"}
+
+
+async def set_admin_rls(db: AsyncSession) -> None:
+    """Admin sorgularının FORCE-RLS tablolarındaki tüm tenant'ları görmesi için
+    app.current_role='admin' GUC'unu set'ler (0005 admin policy'leri ile çalışır)."""
+    await db.execute(text("SELECT set_config('app.current_role', 'admin', true)"))
+
+
 async def require_owner(
     principal: Dict[str, Any] = Depends(get_current_principal),
 ) -> Dict[str, Any]:

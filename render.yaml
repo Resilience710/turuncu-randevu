@@ -28,6 +28,11 @@ services:
         value: INFO
       - key: STATIC_DIR
         value: /app/static
+      # --- Admin paneli ---
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
       # --- E-posta gönderimi — OTP + bildirimler ---
       # Brevo HTTP API (production'da TEK çalışan yol; Render SMTP'yi engeller).
       - key: BREVO_API_KEY

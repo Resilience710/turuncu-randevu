@@ -60,6 +60,10 @@ class Settings(BaseSettings):
     vatansms_message_type: str = "normal"  # "normal" (ASCII'ye çevirir, 1 SMS) | "turkce"
     vatansms_content_type: str = "bilgi"   # işlemsel/bilgilendirme (İYS dışı)
 
+    # Admin paneli (site yöneticisi) — env'den. Boşsa admin girişi kapalı.
+    admin_email: str = ""
+    admin_password: str = ""
+
     # CORS
     cors_origins: str = "http://localhost:5173,http://localhost:3000"
 
