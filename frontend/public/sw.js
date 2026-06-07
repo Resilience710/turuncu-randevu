@@ -1,5 +1,5 @@
 // Turuncu Randevu — service worker (network-first + offline fallback).
-const CACHE_NAME = 'turuncu-randevu-v8';
+const CACHE_NAME = 'turuncu-randevu-v9';
 const APP_SHELL = [
   '/',
   '/index.html',

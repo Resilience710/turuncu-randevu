@@ -24,6 +24,10 @@
   var isIOS = isIPhone || isIPad;
   // In-app (gömülü) tarayıcılar — ana ekrana ekleme desteklenmez:
   var inApp = /FBAN|FBAV|FB_IAB|Instagram|Line|Twitter|MicroMessenger|WhatsApp|Snapchat|TikTok|Pinterest|; ?wv\)/i.test(ua);
+  // iOS'ta Safari DIŞI tarayıcılar (Chrome=CriOS, Firefox=FxiOS, Edge=EdgiOS,
+  // Opera=OPiOS, Google App=GSA). Apple "Ana Ekrana Ekle"yi güvenilir biçimde
+  // sadece Safari'ye verdiği için bunları Safari'ye yönlendiririz.
+  var isIOSNonSafari = isIOS && /crios|fxios|edgios|opios|gsa/i.test(ua);
 
   var deferredPrompt = null;
   var el = null;
@@ -171,9 +175,31 @@
     el.querySelector('.x').onclick = close;
   }
 
+  // --- iOS Chrome/Firefox/Edge: Safari'ye yönlendir ---
+  function showUseSafari() {
+    if (el || isStandalone()) return;
+    injectStyles();
+    mountOverlay();
+    el = document.createElement('div'); el.id = 'pwa-card'; el.className = 'bottom';
+    el.setAttribute('role', 'dialog');
+    el.innerHTML =
+      '<div class="h"><img class="ic" src="/icons/icon-192.png" alt=""/>' +
+      '<div><div class="t">Safari ile ekle</div>' +
+      '<div class="s">iPhone’da ana ekrana ekleme yalnızca Safari’de çalışır.</div></div>' +
+      '<button class="x" aria-label="Kapat">&times;</button></div>' +
+      '<div class="steps">' +
+      '<div class="step"><span class="n">1</span><span>Adres çubuğundaki bağlantıyı kopyala</span></div>' +
+      '<div class="step"><span class="n">2</span><span>Bu sayfayı <b>Safari</b>’de aç</span></div>' +
+      '<div class="step"><span class="n">3</span><span>Safari’de <b>Paylaş</b> → <b>“Ana Ekrana Ekle”</b></span></div>' +
+      '</div>';
+    document.body.appendChild(el);
+    el.querySelector('.x').onclick = close;
+  }
+
   function autoShow() {
     if (isStandalone() || dismissedRecently()) return;
     if (inApp) { setTimeout(showOpenInSafari, 1500); return; }
+    if (isIOSNonSafari) { setTimeout(showUseSafari, 1500); return; }
     if (isIOS) { setTimeout(showIOS, 1500); return; }
     // Android: beforeinstallprompt olayını bekle (aşağıda)
   }
@@ -193,6 +219,7 @@
       if (isStandalone()) return;
       if (inApp) showOpenInSafari();
       else if (deferredPrompt) showAndroid();
+      else if (isIOSNonSafari) showUseSafari();
       else if (isIOS) showIOS();
       else showAndroid();
     },
