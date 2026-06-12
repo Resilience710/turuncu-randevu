@@ -202,7 +202,11 @@ async def _schedule_reminder(
     from app.models.sms_reminder import SmsReminder
     from app.security.phones import phone_hash
 
-    appt_dt = datetime.combine(appt.date, appt.time, tzinfo=timezone.utc)
+    # Randevu tarih/saati panelde TÜRKİYE YEREL saatiyle (UTC+3, 2016'dan beri
+    # yaz saati yok) girilir. Önceden yerel saat UTC sanılıp hatırlatma 3 saat
+    # geç kuruluyordu. Yereli UTC'ye çevirip doğru ana planlıyoruz.
+    tr_local = datetime.combine(appt.date, appt.time)  # naive = TR yerel
+    appt_dt = (tr_local - timedelta(hours=3)).replace(tzinfo=timezone.utc)  # UTC
     send_at = appt_dt - timedelta(minutes=15)
     status = "pending" if send_at > datetime.now(timezone.utc) else "due"
     safe_phone = phone or ""
